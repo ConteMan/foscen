@@ -1,0 +1,38 @@
+{
+  "name": "foscen",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A focused, keyboard-first desktop container for web scenes.",
+  "license": "UNLICENSED",
+  "author": "ConteMan",
+  "main": "dist/main/index.js",
+  "packageManager": "pnpm@11.13.1",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": "11.13.1"
+  },
+  "scripts": {
+    "build": "node scripts/clean.mjs && tsc -p tsconfig.build.json && esbuild src/preload/index.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload/index.js --sourcemap && esbuild src/renderer/index.ts --bundle --platform=browser --format=iife --outfile=dist/renderer/index.js --sourcemap && node scripts/copy-static.mjs",
+    "dev": "pnpm run build && electron .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "selftest": "./scripts/selftest.sh",
+    "smoke": "node scripts/smoke.mjs",
+    "start": "electron .",
+    "test": "tsx --test test/**/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
+    "electron": "43.4.0",
+    "esbuild": "0.28.2",
+    "eslint": "10.8.1",
+    "globals": "17.11.0",
+    "prettier": "3.9.6",
+    "tsx": "4.23.12",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.67.0"
+  }
+}

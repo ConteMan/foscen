@@ -1,0 +1,38 @@
+name: Feature
+description: 提议与 Foscen 定位一致的能力
+title: 'feature: '
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: 背景
+      description: 哪个网页场景或键盘工作流遇到了问题？
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: 目标
+      description: 用户完成后能做到什么？
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 范围与非目标
+      description: 明确本次包含和不包含什么。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      description: 给出可验证的完成条件。
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: 安全边界影响
+      description: 是否影响网页权限、IPC、导航、Session、文件或隐私？

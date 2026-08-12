@@ -1,0 +1,38 @@
+name: Bug
+description: 报告可复现的缺陷
+title: 'bug: '
+labels: ['bug']
+body:
+  - type: textarea
+    id: symptom
+    attributes:
+      label: 现象
+      description: 实际发生了什么？
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望
+      description: 正确行为应是什么？
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
+      description: 提供最小、稳定的复现步骤。
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境
+      description: macOS、Foscen、Node/Electron 版本及相关网页地址。
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: 影响与证据
+      description: 影响范围、日志或脱敏截图；不要提交 secrets 或隐私数据。

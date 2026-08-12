@@ -1,0 +1,137 @@
+:root {
+  color-scheme: light dark;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  padding: 8px;
+}
+
+.command-bar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 12px;
+  color: #15211b;
+  background: color-mix(in srgb, #f7faf8 94%, transparent);
+  border: 1px solid rgb(19 45 33 / 14%);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgb(8 22 16 / 22%);
+  backdrop-filter: blur(22px) saturate(140%);
+}
+
+.history-actions {
+  display: flex;
+  gap: 4px;
+}
+
+button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  font-size: 18px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+}
+
+button:hover,
+button:focus-visible {
+  background: rgb(36 107 75 / 12%);
+  outline: none;
+}
+
+form {
+  position: relative;
+}
+
+input {
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  background: rgb(255 255 255 / 72%);
+  border: 1px solid rgb(20 70 47 / 18%);
+  border-radius: 9px;
+  outline: none;
+}
+
+input:focus {
+  border-color: #2c7d57;
+  box-shadow: 0 0 0 3px rgb(44 125 87 / 15%);
+}
+
+.error {
+  position: absolute;
+  top: 38px;
+  left: 0;
+  margin: 0;
+  padding: 5px 8px;
+  color: #7c1d1d;
+  font-size: 12px;
+  background: #fff3f3;
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgb(64 10 10 / 15%);
+}
+
+kbd {
+  color: #627069;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .command-bar {
+    color: #edf6f1;
+    background: color-mix(in srgb, #18221d 94%, transparent);
+    border-color: rgb(219 255 235 / 14%);
+  }
+
+  input {
+    background: rgb(5 12 8 / 52%);
+    border-color: rgb(213 255 232 / 16%);
+  }
+
+  .error {
+    color: #ffd4d4;
+    background: #4b1d1d;
+  }
+}

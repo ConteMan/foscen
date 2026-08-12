@@ -1,0 +1,8 @@
+allowBuilds:
+  # tsx 的本地 TypeScript 执行依赖；只放行已锁定的 esbuild 安装校验脚本。
+  esbuild: true
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  # 2026-08-12 初始化时已人工核验的精确稳定版本。
+  - electron@43.4.0
+  - globals@17.11.0

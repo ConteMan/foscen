@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Foscen Commands</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="command-bar" aria-label="场景导航">
+      <nav class="history-actions" aria-label="浏览控制">
+        <button type="button" data-back aria-label="后退">←</button>
+        <button type="button" data-forward aria-label="前进">→</button>
+        <button type="button" data-reload aria-label="刷新">↻</button>
+      </nav>
+      <form data-navigation-form>
+        <label class="visually-hidden" for="url">HTTPS 地址</label>
+        <input
+          id="url"
+          data-url-input
+          type="text"
+          inputmode="url"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="输入 HTTPS 地址"
+        />
+        <p class="error" data-error role="alert" hidden></p>
+      </form>
+      <kbd>Esc</kbd>
+    </main>
+    <script src="./index.js"></script>
+  </body>
+</html>

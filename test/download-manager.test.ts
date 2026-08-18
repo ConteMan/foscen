@@ -157,6 +157,15 @@ async function waitFor(predicate: () => boolean): Promise<void> {
   assert.fail('等待异步下载状态超时')
 }
 
+async function waitForSettled(
+  harness: DownloadHarness,
+  status: DownloadSnapshot['status'],
+): Promise<void> {
+  await waitFor(() =>
+    harness.notifications.some(({ downloads }) => downloads[0]?.status === status),
+  )
+}
+
 test('只接收 scene WebContents 发起的下载', async () => {
   await withManager((harness) => {
     const item = new FakeDownloadItem()
@@ -265,7 +274,7 @@ test('完成下载时以排他方式发布且不覆盖同名文件', async () =>
     item.totalBytes = 5
     item.emit('done', {} as Event, 'completed')
 
-    await waitFor(() => harness.manager.list()[0]?.status === 'completed')
+    await waitForSettled(harness, 'completed')
     const completedPath = harness.manager.completedPath(id)
     assert.ok(completedPath)
     assert.equal(completedPath, join(harness.directory, 'artifact-1.pdf'))
@@ -289,7 +298,7 @@ test('完成事件仍会复验最终字节数并拒绝超限文件', async () =>
     item.totalBytes = TWO_GIB + 1
     item.emit('done', {} as Event, 'completed')
 
-    await waitFor(() => harness.manager.list()[0]?.status === 'cancelled')
+    await waitForSettled(harness, 'cancelled')
     assert.equal(harness.manager.list()[0]?.error, '文件超过 2 GiB 安全限制')
     assert.equal(harness.manager.completedPath(id), undefined)
     await assert.rejects(access(item.savePath))

@@ -1,10 +1,19 @@
 {
   "name": "foscen",
-  "version": "0.1.0",
+  "productName": "Foscen",
+  "version": "0.2.0",
   "private": true,
   "description": "A focused, keyboard-first desktop container for web scenes.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "author": "ConteMan",
+  "homepage": "https://github.com/ConteMan/foscen#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ConteMan/foscen.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ConteMan/foscen/issues"
+  },
   "main": "dist/main/index.js",
   "packageManager": "pnpm@11.13.1",
   "engines": {
@@ -17,13 +26,24 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
+    "make:mac": "pnpm run build && electron-forge make --platform=darwin --arch=universal",
+    "package:mac": "pnpm run build && electron-forge package --platform=darwin --arch=universal",
+    "release:prepare:mac": "node scripts/validate-release.mjs && electron-forge publish --dry-run --platform=darwin --arch=universal && pnpm run verify:package",
+    "release:upload:mac": "electron-forge publish --from-dry-run",
     "selftest": "./scripts/selftest.sh",
     "smoke": "node scripts/smoke.mjs",
     "start": "electron .",
     "test": "tsx --test test/**/*.test.ts",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "verify:config": "node scripts/verify-package.mjs --config-only",
+    "verify:package": "node scripts/verify-package.mjs --artifacts"
   },
   "devDependencies": {
+    "@electron/asar": "3.4.1",
+    "@electron-forge/cli": "7.11.2",
+    "@electron-forge/maker-dmg": "7.11.2",
+    "@electron-forge/maker-zip": "7.11.2",
+    "@electron-forge/publisher-github": "7.11.2",
     "@eslint/js": "10.0.1",
     "@types/node": "24.13.3",
     "electron": "43.4.0",

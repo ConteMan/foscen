@@ -6,17 +6,18 @@ Foscen 是一个 macOS-first 的 Electron 桌面应用。它不是 Chrome 替代
 
 ## 当前可验证版本
 
-`0.1.0` 建立了可运行的安全骨架：
+`0.2.0` 是首个可用预览版：
 
-- `BaseWindow + WebContentsView` 单窗口组合；
-- 可信应用 UI 与不受信任网页使用独立 View 和 Session；
-- `⌘L` / `Ctrl+L` 唤起按需浮现的 HTTPS 导航栏；
-- `⌘R` / `Ctrl+R` 刷新，`⌥←` / `⌥→` 前进后退；
-- 持久网页会话 `persist:foscen-scenes`；
-- 默认拒绝权限、新窗口、外部协议、非 HTTPS 导航；
-- 单元测试、构建和真实 Electron 启动 smoke。
+- 单窗口 `BaseWindow + WebContentsView`，可信控制面与不受信任网页隔离；
+- HTTPS 导航、持久网页会话、窗口与当前场景恢复；
+- 按需控制面、场景保存/打开/删除和完整键盘入口；
+- 当前可见网页截图，排他保存到 `图片/Foscen`；
+- 仅接受用户动作触发且完整重定向链均为 HTTPS 的下载，经可信 UI 审批后保存到 `下载/Foscen`；
+- 摄像头、麦克风、位置、通知和剪贴板写入按来源提示，可选择一次、本次会话或持久决定并随时撤销；
+- universal macOS 应用、DMG、升级 ZIP、Developer ID 签名、公证和 GitHub Release 流水线；
+- 默认拒绝未知权限、设备/屏幕捕获、新窗口、外部协议和非 HTTPS 导航。
 
-这只是工程与安全边界的首个切片，不代表 MVP 已完成。
+这是早期预览，不是通用浏览器。正式分发的签名、公证与跨版本自动升级仍需仓库配置 Apple 凭据后验证。
 
 ## 开发与验证
 
@@ -36,6 +37,30 @@ pnpm start
 ```
 
 门禁覆盖依赖锁定、格式、Lint、类型检查、单元测试、构建和 Electron 启动 smoke。
+
+本地生成未签名的 universal macOS 安装制品：
+
+```bash
+pnpm run make:mac
+pnpm run verify:package
+```
+
+正式发布要求 Developer ID 与 App Store Connect API 凭据，详见[发布文档](docs/release.md)。
+
+## 键盘入口
+
+| 操作       | macOS       | 其他平台        |
+| ---------- | ----------- | --------------- |
+| 地址       | `⌘ L`       | `Ctrl L`        |
+| 命令面板   | `⌘ ⇧ P`     | `Ctrl Shift P`  |
+| 保存场景   | `⌘ S`       | `Ctrl S`        |
+| 截图       | `⌘ ⇧ S`     | `Ctrl Shift S`  |
+| 权限       | `⌘ ,`       | `Ctrl ,`        |
+| 下载       | `⌘ J`       | `Ctrl J`        |
+| 升级       | `⌘ U`       | `Ctrl U`        |
+| 刷新       | `⌘ R`       | `Ctrl R`        |
+| 前进/后退  | `⌥ → / ⌥ ←` | `Alt → / Alt ←` |
+| 返回到网页 | `Esc`       | `Esc`           |
 
 ## MVP 方向
 
@@ -59,6 +84,7 @@ pnpm start
 - [文档索引](docs/README.md)
 - [架构](docs/architecture.md)
 - [安全边界](docs/security.md)
+- [发布](docs/release.md)
 - [路线图](docs/roadmap.md)
 - [架构决策](docs/adr/README.md)
 - [贡献约定](CONTRIBUTING.md)
@@ -66,4 +92,4 @@ pnpm start
 
 ## 许可证
 
-尚未选择开源许可证。仓库公开不等于授予使用、复制或再分发许可；在维护者明确决定前，`package.json` 标记为 `UNLICENSED`。
+[MIT](LICENSE) © 2026 ConteMan。

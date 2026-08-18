@@ -2,41 +2,64 @@
 
 ## 目标
 
-Foscen 用最少的桌面 chrome 将一个网页呈现为独立场景。应用能力必须与网页内容分离，键盘操作由主进程统一编排。
+Foscen 用最少的桌面 chrome 将一个网页呈现为独立场景。网页是不受信任的数据与代码；窗口、文件、权限、持久化和升级始终属于主进程的可信域。
 
 ## 运行时组成
 
 ```text
-BaseWindow
+BaseWindow（单实例）
 ├── scene WebContentsView
-│   ├── 不受信任网页
+│   ├── 不受信任 HTTPS 网页
 │   ├── persist:foscen-scenes Session
 │   └── 无 preload / 无 Node / 无 IPC
 └── chrome WebContentsView（按需显示）
-    ├── 本地可信 HTML/CSS/JS
-    ├── 内存 Session
-    └── 最小 preload → 白名单 IPC → 主进程
+    ├── 随应用发布的本地 HTML/CSS/JS
+    ├── 独立内存 Session
+    └── 最小 contextBridge → 白名单 IPC → 主进程
+
+主进程
+├── SceneStore → userData/scenes.json
+├── PermissionController/Store → userData/permissions.json
+├── DownloadManager → Downloads/Foscen/.foscen-staging → 排他发布
+├── ScreenshotService → Pictures/Foscen
+└── UpdateService → 固定 GitHub 公共更新源
 ```
 
-主进程拥有窗口、View、布局、导航、快捷键、权限和生命周期。`sceneView` 先加入，`chromeView` 后加入，从而让按需 UI 位于网页上方。隐藏 chrome 时同时隐藏整个 View，避免透明区域拦截网页输入。
+scene 先加入、chrome 后加入，控制面因此位于网页上方。隐藏 chrome 时隐藏整个 View，透明区域不会拦截网页输入。`BaseWindow` 不会自动销毁附着 View 的 `webContents`，关闭窗口时必须逐个关闭。
 
-## 数据与控制流
+## 启动与恢复
 
-1. 主进程在 `app.ready` 后创建两个隔离 Session 和 View。
-2. 本地 chrome 通过 `contextBridge` 只能调用导航、前进、后退、刷新和关闭 chrome。
-3. 主进程同时验证 IPC channel、sender、sender frame URL 与参数。
-4. scene 导航只接受规范化后的 HTTPS；内置落地页是唯一允许的 `file:` 页面。
-5. scene 的网页会话写入 Electron 的持久分区；应用 UI 不复用该分区。
+1. 模块加载最早阶段获取 Electron 单实例锁；后续实例只聚焦现有窗口。
+2. `app.ready` 后从固定 `userData` 读取经过严格校验的窗口、当前 URL、场景和持久权限。
+3. 创建隔离 Session 与 View，先安装导航、权限、下载和生命周期处理器，再加载本地控制面及恢复的 HTTPS 页面。
+4. 控制面完成 preload 握手后显示窗口；开发 smoke 以同一握手作为真实 Electron 启动证据。
+5. 移动/缩放窗口采用短防抖写入；主 frame 导航提交采用最后写入优先的有界合并，窗口关闭前等待最新 URL 与窗口状态落盘。
+
+## 可信控制流
+
+控制面只能调用 `src/shared/ipc.ts` 中逐项定义的方法。每次 IPC 必须同时满足：
+
+- sender 是当前 chrome View；
+- sender frame 是 chrome 的主 frame；
+- frame URL 是精确的随包本地文档；
+- 主进程重新校验所有参数，不信任 preload 的 TypeScript 类型。
+
+控制面接收单向 `ChromeState` 快照，包含导航状态、场景、下载、权限提示/记录和升级状态。动态文本使用 DOM `textContent`，不解释网页提供的 HTML。
+
+## 能力生命周期
+
+- 场景：名称与 URL 经过 schema 校验，原子保存；打开场景仍走统一 HTTPS 导航策略。
+- 权限：仅当前主 frame 的精确 HTTPS origin 可进入最多 32 项的提示队列；从请求到达起 30 秒无回应即拒绝，导航、渲染进程退出和窗口关闭会取消待处理请求。
+- 下载：`will-download` 同步验证 scene、用户手势、URL 链和大小，暂停至私有 UUID 暂存文件；可信 UI 允许后继续，完成时以硬链接排他发布。
+- 截图：可信 IPC 或主进程快捷键触发；同一时间仅一项，限制当前 View 尺寸与 PNG 大小，不把像素回传网页。
+- 升级：仅已打包 macOS 启用，feed 固定为 `ConteMan/foscen`；检查与下载可自动进行，重启安装需要可信 UI 动作。
 
 ## 源码结构
 
-- `src/main/`：Electron 生命周期、View 组合与安全策略。
+- `src/main/`：Electron 生命周期、View 组合、能力控制器与安全策略。
 - `src/preload/`：可信 UI 的最小能力桥。
-- `src/renderer/`：按需浮现的本地应用 UI。
+- `src/renderer/`：按需浮现的本地控制面。
 - `src/scene/`：无权限的离线落地页。
-- `src/shared/`：IPC 名称与类型合同。
-- `test/`：不依赖 GUI 的策略单元测试。
-
-## 生命周期
-
-`BaseWindow` 不会自动销毁附着的 `WebContentsView.webContents`。窗口关闭时必须逐个调用 `webContents.close()`；未来场景切换或 View 移除也必须遵守同一规则。
+- `src/shared/`：IPC、状态与持久数据合同。
+- `test/`：不依赖 GUI 的策略和状态机单元测试。
+- `build/`、`forge.config.cjs`：macOS 签名、公证与制品合同。

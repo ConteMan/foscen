@@ -1,0 +1,103 @@
+name: Release macOS
+
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    name: quality-gate
+    runs-on: macos-15
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Run unified quality gate
+        run: ./scripts/selftest.sh
+
+  release:
+    name: sign-notarize-publish
+    needs: quality
+    runs-on: macos-15-intel
+    timeout-minutes: 60
+    environment: macos-release
+    permissions:
+      contents: write
+    env:
+      APPLE_API_KEY: ${{ runner.temp }}/foscen-notary-key.p8
+      FOSCEN_CERTIFICATE_PATH: ${{ runner.temp }}/foscen-signing.p12
+      FOSCEN_KEYCHAIN: ${{ runner.temp }}/foscen-signing.keychain-db
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install frozen dependencies before credentials
+        run: pnpm install --frozen-lockfile
+      - name: Build before credentials
+        run: pnpm run build
+      - name: Import temporary signing credentials
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          umask 077
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 32)"
+
+          printf '%s' "$MACOS_CERT_P12" | base64 --decode > "$FOSCEN_CERTIFICATE_PATH"
+          printf '%s' "$APPLE_API_KEY_P8" | base64 --decode > "$APPLE_API_KEY"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$FOSCEN_KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$FOSCEN_KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$FOSCEN_KEYCHAIN"
+          security import "$FOSCEN_CERTIFICATE_PATH" -k "$FOSCEN_KEYCHAIN" -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$FOSCEN_KEYCHAIN"
+          security list-keychains -d user -s "$FOSCEN_KEYCHAIN"
+      - name: Build and verify signed universal artifacts
+        env:
+          FOSCEN_RELEASE: '1'
+          APPLE_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: pnpm run release:prepare:mac
+      - name: Remove temporary signing credentials
+        if: always()
+        run: |
+          set +e
+          security delete-keychain "$FOSCEN_KEYCHAIN"
+          rm -f "$FOSCEN_CERTIFICATE_PATH" "$APPLE_API_KEY"
+      - name: Upload verified draft and publish release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          EXISTING_DRAFT="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$GITHUB_REF_NAME" --jq .draft 2>/dev/null || true)"
+          if [[ "$EXISTING_DRAFT" == "false" ]]; then
+            echo "Release $GITHUB_REF_NAME 已公开，拒绝覆盖现有资产" >&2
+            exit 1
+          fi
+          pnpm run release:upload:mac
+          gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false

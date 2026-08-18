@@ -38,12 +38,15 @@ test('页面导航只允许 HTTPS 和精确的内置落地页', () => {
 
   assert.equal(isAllowedSceneNavigation(landing, landing), true)
   assert.equal(isAllowedSceneNavigation('https://example.com', landing), true)
+  assert.equal(isAllowedSceneNavigation('https://user:secret@example.com', landing), false)
+  assert.equal(isAllowedSceneNavigation(`https://example.com/${'a'.repeat(2050)}`, landing), false)
   assert.equal(isAllowedSceneNavigation('http://example.com', landing), false)
   assert.equal(isAllowedSceneNavigation('file:///tmp/other.html', landing), false)
 })
 
 test('仅向命令栏显示 HTTPS 地址', () => {
   assert.equal(displayableSceneUrl('https://example.com'), 'https://example.com/')
+  assert.equal(displayableSceneUrl('https://user:secret@example.com'), '')
   assert.equal(displayableSceneUrl('file:///internal/index.html'), '')
   assert.equal(displayableSceneUrl('not a url'), '')
 })

@@ -1,8 +1,16 @@
+nodeLinker: hoisted
+
 allowBuilds:
   # tsx 的本地 TypeScript 执行依赖；只放行已锁定的 esbuild 安装校验脚本。
   esbuild: true
+  # Forge DMG maker 写入扩展属性与 Finder alias 所需的已锁定原生依赖。
+  fs-xattr: true
+  macos-alias: true
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   # 2026-08-12 初始化时已人工核验的精确稳定版本。
   - electron@43.4.0
   - globals@17.11.0
+overrides:
+  # Forge 7.11.2 的 Electron fork 固定到 registry 等价版本，避免 Git 子依赖。
+  '@electron/node-gyp': 10.2.0-electron.2

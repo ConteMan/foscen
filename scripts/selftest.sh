@@ -10,7 +10,9 @@ step "工程基线"
 required_files=(
   AGENTS.md
   CHANGELOG.md
+  LICENSE
   README.md
+  forge.config.cjs
   package.json
   pnpm-lock.yaml
   pnpm-workspace.yaml
@@ -18,11 +20,20 @@ required_files=(
   docs/README.md
   docs/architecture.md
   docs/security.md
+  docs/release.md
   docs/roadmap.md
   docs/adr/README.md
   docs/adr/0001-electron-view-boundaries.md
+  docs/adr/0002-trusted-capabilities.md
+  build/entitlements.plist
+  build/entitlements.helper.plist
+  build/entitlements.plugin.plist
+  assets/brand/foscen.icns
+  scripts/validate-release.mjs
+  scripts/verify-package.mjs
   .github/pull_request_template.md
   .github/workflows/selftest.yml
+  .github/workflows/release.yml
 )
 for path in "${required_files[@]}"; do
   test -f "$path" || fail "缺少 $path"
@@ -35,7 +46,7 @@ test "$(node -p 'process.versions.node.split(".")[0]')" = "24" || fail "Node.js 
 test "$(pnpm --version)" = "11.13.1" || fail "pnpm 必须为 11.13.1"
 
 step "Shell 语法"
-bash -n scripts/selftest.sh
+bash -n scripts/selftest.sh scripts/generate-icon.sh
 
 step "依赖锁定"
 pnpm install --frozen-lockfile
@@ -48,6 +59,9 @@ pnpm run lint
 
 step "类型检查"
 pnpm run typecheck
+
+step "打包配置"
+pnpm run verify:config
 
 step "单元测试"
 pnpm run test

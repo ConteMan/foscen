@@ -44,7 +44,7 @@ export function isAllowedSceneNavigation(target: string, landingPageUrl: string)
   }
 
   try {
-    return new URL(target).protocol === HTTPS_PROTOCOL
+    return isSafeParsedSceneUrl(new URL(target))
   } catch {
     return false
   }
@@ -53,8 +53,19 @@ export function isAllowedSceneNavigation(target: string, landingPageUrl: string)
 export function displayableSceneUrl(target: string): string {
   try {
     const parsed = new URL(target)
-    return parsed.protocol === HTTPS_PROTOCOL ? parsed.href : ''
+    return isSafeParsedSceneUrl(parsed) ? parsed.href : ''
   } catch {
     return ''
   }
+}
+
+function isSafeParsedSceneUrl(parsed: URL): boolean {
+  return (
+    parsed.protocol === HTTPS_PROTOCOL &&
+    !parsed.username &&
+    !parsed.password &&
+    Boolean(parsed.hostname) &&
+    parsed.origin !== 'null' &&
+    parsed.href.length <= 2048
+  )
 }

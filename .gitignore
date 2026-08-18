@@ -19,7 +19,18 @@ pnpm-debug.log*
 .env.*
 !.env.example
 
+.authinfo
+.authinfo.gpg
+.git-credentials
+.netrc
+.npmrc
+credentials.json
 *.pem
 *.key
+*.p8
 *.p12
+*.cer
+*.keychain
+*.keychain-db
 *.mobileprovision
+*.provisionprofile

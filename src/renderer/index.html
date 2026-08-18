@@ -7,30 +7,243 @@
       content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Foscen Commands</title>
+    <title>Foscen 控制面</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="command-bar" aria-label="场景导航">
-      <nav class="history-actions" aria-label="浏览控制">
-        <button type="button" data-back aria-label="后退">←</button>
-        <button type="button" data-forward aria-label="前进">→</button>
-        <button type="button" data-reload aria-label="刷新">↻</button>
+    <main class="control-panel" aria-label="Foscen 控制面">
+      <header class="panel-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">F</span>
+          <div>
+            <strong>Foscen</strong>
+            <span>Focus + Scene</span>
+          </div>
+        </div>
+        <p class="status" data-status role="status" aria-live="polite">控制面已就绪</p>
+        <button class="icon-button" type="button" data-dismiss aria-label="关闭控制面">×</button>
+      </header>
+
+      <section class="navigation" aria-label="网页导航">
+        <nav class="history-actions" aria-label="浏览控制">
+          <button class="icon-button" type="button" data-back aria-label="后退">←</button>
+          <button class="icon-button" type="button" data-forward aria-label="前进">→</button>
+          <button class="icon-button" type="button" data-reload aria-label="刷新">↻</button>
+        </nav>
+        <form data-navigation-form>
+          <label class="visually-hidden" for="url">HTTPS 地址</label>
+          <input
+            id="url"
+            data-url-input
+            type="text"
+            inputmode="url"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="输入 HTTPS 地址"
+          />
+          <button class="primary-button" type="submit">前往</button>
+        </form>
+      </section>
+
+      <nav class="panel-tabs" role="tablist" aria-label="控制面分类">
+        <button
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panel-command"
+          data-panel-target="command"
+        >
+          命令
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-scenes"
+          data-panel-target="scenes"
+        >
+          场景 <span class="count" data-scene-count>0</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-downloads"
+          data-panel-target="downloads"
+        >
+          下载 <span class="count" data-download-count>0</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-permissions"
+          data-panel-target="permissions"
+        >
+          权限 <span class="count attention" data-permission-count hidden>0</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-update"
+          data-panel-target="update"
+        >
+          升级
+        </button>
       </nav>
-      <form data-navigation-form>
-        <label class="visually-hidden" for="url">HTTPS 地址</label>
-        <input
-          id="url"
-          data-url-input
-          type="text"
-          inputmode="url"
-          autocomplete="off"
-          spellcheck="false"
-          placeholder="输入 HTTPS 地址"
-        />
-        <p class="error" data-error role="alert" hidden></p>
-      </form>
-      <kbd>Esc</kbd>
+
+      <div class="panel-content">
+        <section
+          id="panel-command"
+          class="panel-section"
+          role="tabpanel"
+          tabindex="-1"
+          data-panel="command"
+        >
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">键盘优先</p>
+              <h1>现在要做什么？</h1>
+            </div>
+            <p class="muted">所有桌面能力都由可信控制面发起。</p>
+          </div>
+          <div class="command-grid" aria-label="快速命令">
+            <button type="button" data-command="navigate">
+              <span>打开网页</span><kbd>⌘ L</kbd>
+            </button>
+            <button type="button" data-command="screenshot">
+              <span>保存截图</span><kbd>⌘ ⇧ S</kbd>
+            </button>
+            <button type="button" data-command="scenes"><span>管理场景</span><kbd>⌘ S</kbd></button>
+            <button type="button" data-command="permissions">
+              <span>权限记录</span><kbd>⌘ ,</kbd>
+            </button>
+            <button type="button" data-command="downloads">
+              <span>下载状态</span><kbd>⌘ J</kbd>
+            </button>
+            <button type="button" data-command="update"><span>应用升级</span><kbd>⌘ U</kbd></button>
+          </div>
+        </section>
+
+        <section
+          id="panel-scenes"
+          class="panel-section"
+          role="tabpanel"
+          tabindex="-1"
+          data-panel="scenes"
+          hidden
+        >
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Scene</p>
+              <h1>保存与恢复场景</h1>
+            </div>
+          </div>
+          <form class="inline-form" data-scene-form>
+            <label class="visually-hidden" for="scene-name">场景名称</label>
+            <input
+              id="scene-name"
+              data-scene-name
+              type="text"
+              maxlength="120"
+              autocomplete="off"
+              placeholder="给当前网页起个名字"
+            />
+            <button class="primary-button" type="submit">保存当前场景</button>
+          </form>
+          <div class="item-list" data-scene-list aria-label="已保存场景"></div>
+          <p class="empty-state" data-scene-empty>还没有保存场景。</p>
+        </section>
+
+        <section
+          id="panel-downloads"
+          class="panel-section"
+          role="tabpanel"
+          tabindex="-1"
+          data-panel="downloads"
+          hidden
+        >
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Downloads</p>
+              <h1>下载审批与进度</h1>
+            </div>
+            <p class="muted">网页不能绕过此处直接保存文件。</p>
+          </div>
+          <div class="item-list" data-download-list aria-label="下载项目"></div>
+          <p class="empty-state" data-download-empty>当前没有下载。</p>
+        </section>
+
+        <section
+          id="panel-permissions"
+          class="panel-section"
+          role="tabpanel"
+          tabindex="-1"
+          data-panel="permissions"
+          hidden
+        >
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Permissions</p>
+              <h1>按来源控制网页权限</h1>
+            </div>
+            <p class="muted">未明确允许的权限一律拒绝。</p>
+          </div>
+          <article class="permission-prompt" data-permission-prompt hidden>
+            <p class="eyebrow">网页正在请求</p>
+            <h2 data-permission-title>权限请求</h2>
+            <p class="origin" data-permission-origin></p>
+            <div class="approval-actions" aria-label="权限有效期">
+              <button class="primary-button" type="button" data-permission-lifetime="once">
+                允许一次
+              </button>
+              <button type="button" data-permission-lifetime="session">本次会话</button>
+              <button type="button" data-permission-lifetime="persistent">始终允许</button>
+              <button class="danger-button" type="button" data-permission-reject>拒绝</button>
+            </div>
+          </article>
+          <h2 class="list-heading">已记录权限</h2>
+          <div class="item-list" data-permission-list aria-label="已记录权限"></div>
+          <p class="empty-state" data-permission-empty>没有已记录的权限。</p>
+        </section>
+
+        <section
+          id="panel-update"
+          class="panel-section"
+          role="tabpanel"
+          tabindex="-1"
+          data-panel="update"
+          hidden
+        >
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Updates</p>
+              <h1>应用升级</h1>
+            </div>
+          </div>
+          <article class="update-card">
+            <div class="update-mark" aria-hidden="true">↑</div>
+            <div>
+              <h2 data-update-title>正在读取版本</h2>
+              <p class="muted" data-update-message></p>
+              <p class="version" data-update-version></p>
+            </div>
+            <div class="update-actions">
+              <button type="button" data-update-check>检查升级</button>
+              <button class="primary-button" type="button" data-update-install hidden>
+                重启并安装
+              </button>
+            </div>
+          </article>
+        </section>
+      </div>
+
+      <footer class="panel-footer">
+        <span><kbd>Esc</kbd> 返回网页</span>
+        <span><kbd>⌥ ←</kbd> / <kbd>⌥ →</kbd> 前进后退</span>
+        <span>仅允许 HTTPS</span>
+      </footer>
     </main>
     <script src="./index.js"></script>
   </body>

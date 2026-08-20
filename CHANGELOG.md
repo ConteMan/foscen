@@ -2,6 +2,22 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### Added
+
+- 加入位于网页下方的可信窗口外框，默认通过顶部外框可靠拖动窗口。
+- 控制面顶部可拖动窗口，按钮和输入使用 `app-region: no-drag` 保持正常交互。
+
+### Changed
+
+- 默认边框布局将 scene 从四边等距内缩，避免拖动入口覆盖网页控件；同时预留无常驻拖动层的极简布局语义。
+- macOS 原生交通灯在窗口首次显示前默认隐藏，后续由通用设置提供显示开关。
+
+### Security
+
+- window chrome 只加载精确随包本地文档，不配置脚本、preload、Node 或 IPC，并位于 scene 下方拒绝外部导航与新窗口。
+
 ## [0.2.0] - 2026-08-19
 
 ### Added

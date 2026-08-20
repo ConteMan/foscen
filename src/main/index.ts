@@ -7,6 +7,7 @@ import {
   BaseWindow,
   ipcMain,
   Menu,
+  nativeTheme,
   screen,
   session,
   WebContentsView,
@@ -34,18 +35,25 @@ import {
   isAllowedSceneNavigation,
   normalizeSceneUrl,
 } from './url-policy.js'
+import {
+  DEFAULT_WINDOW_PRESENTATION_MODE,
+  calculateWindowViewLayout,
+  type WindowPresentationMode,
+} from './window-layout.js'
 
-const CHROME_HEIGHT = 530
-const CHROME_SIDE_INSET = 52
 const UI_PARTITION = 'foscen-ui'
 const SCENE_PARTITION = 'persist:foscen-scenes'
 const WINDOW_BOUNDS_DEBOUNCE_MS = 300
 const CURRENT_SCENE_URL_DEBOUNCE_MS = 250
+const LIGHT_WINDOW_FRAME_COLOR = '#d9dcda'
+const DARK_WINDOW_FRAME_COLOR = '#1c211e'
 
 const chromeDocument = join(__dirname, '../renderer/index.html')
 const landingDocument = join(__dirname, '../scene/index.html')
+const windowChromeDocument = join(__dirname, '../window-chrome/index.html')
 const chromeDocumentUrl = pathToFileURL(chromeDocument).href
 const landingDocumentUrl = pathToFileURL(landingDocument).href
+const windowChromeDocumentUrl = pathToFileURL(windowChromeDocument).href
 
 app.setName('Foscen')
 app.enableSandbox()
@@ -70,6 +78,10 @@ function closeWebContents(webContents: WebContents): void {
   if (!webContents.isDestroyed()) {
     webContents.close()
   }
+}
+
+function windowFrameColor(): string {
+  return nativeTheme.shouldUseDarkColors ? DARK_WINDOW_FRAME_COLOR : LIGHT_WINDOW_FRAME_COLOR
 }
 
 function actionSucceeded(message: string): ActionResult {
@@ -121,9 +133,11 @@ interface FoscenWindowOptions {
 class FoscenWindow {
   readonly window: BaseWindow
   readonly sceneView: WebContentsView
+  readonly windowChromeView: WebContentsView
   readonly chromeView: WebContentsView
 
   private chromeVisible = false
+  private readonly presentationMode: WindowPresentationMode = DEFAULT_WINDOW_PRESENTATION_MODE
   private focusMode: FocusMode = 'navigate'
   private readonly rendererReady: Promise<void>
   private resolveRendererReady: (() => void) | undefined
@@ -160,9 +174,24 @@ class FoscenWindow {
     denyAllSessionCapabilities(uiSession)
 
     this.window = new BaseWindow(windowOptions)
+    if (process.platform === 'darwin') {
+      this.window.setWindowButtonVisibility(false)
+    }
     this.sceneView = new WebContentsView({
       webPreferences: {
         session: sceneSession,
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: true,
+        webSecurity: true,
+        webviewTag: false,
+        allowRunningInsecureContent: false,
+        spellcheck: false,
+      },
+    })
+    this.windowChromeView = new WebContentsView({
+      webPreferences: {
+        session: uiSession,
         nodeIntegration: false,
         contextIsolation: true,
         sandbox: true,
@@ -186,8 +215,10 @@ class FoscenWindow {
       },
     })
 
+    this.window.contentView.addChildView(this.windowChromeView)
     this.window.contentView.addChildView(this.sceneView)
     this.window.contentView.addChildView(this.chromeView)
+    this.windowChromeView.setBackgroundColor(windowFrameColor())
     this.chromeView.setVisible(false)
 
     this.downloadManager = new DownloadManager({
@@ -240,7 +271,7 @@ class FoscenWindow {
       show: false,
       title: 'Foscen',
       titleBarStyle: 'hiddenInset',
-      backgroundColor: '#111713',
+      backgroundColor: windowFrameColor(),
       ...(savedBounds && isVisibleBounds(savedBounds) ? savedBounds : {}),
     }
 
@@ -258,6 +289,7 @@ class FoscenWindow {
     const restoredUrl = await this.options.sceneStore.getCurrentSceneUrl()
     await Promise.all([
       this.chromeView.webContents.loadFile(chromeDocument),
+      this.windowChromeView.webContents.loadFile(windowChromeDocument),
       restoredUrl
         ? this.sceneView.webContents.loadURL(restoredUrl).catch(async () => {
             await this.options.sceneStore.setCurrentSceneUrl(null)
@@ -500,6 +532,7 @@ class FoscenWindow {
       this.downloadManager.dispose()
       this.updateService.dispose()
       closeWebContents(this.chromeView.webContents)
+      closeWebContents(this.windowChromeView.webContents)
       closeWebContents(this.sceneView.webContents)
       this.options.onClosed()
     })
@@ -507,16 +540,12 @@ class FoscenWindow {
 
   private layout(): void {
     const [width = 0, height = 0] = this.window.getContentSize()
-    this.sceneView.setBounds({ x: 0, y: 0, width, height })
-    this.chromeView.setBounds({
-      x: Math.min(CHROME_SIDE_INSET, Math.max(8, Math.floor(width * 0.05))),
-      y: 8,
-      width: Math.max(
-        1,
-        width - Math.min(CHROME_SIDE_INSET, Math.max(8, Math.floor(width * 0.05))) * 2,
-      ),
-      height: Math.max(1, Math.min(CHROME_HEIGHT, height - 16)),
-    })
+    const layout = calculateWindowViewLayout(width, height, this.presentationMode)
+    this.windowChromeView.setBounds(layout.windowChrome)
+    this.windowChromeView.setVisible(layout.windowChromeVisible)
+    this.sceneView.setBounds(layout.scene)
+    this.sceneView.setBorderRadius(layout.sceneBorderRadius)
+    this.chromeView.setBounds(layout.control)
   }
 
   private installNavigationGuards(): void {
@@ -549,6 +578,18 @@ class FoscenWindow {
       }
     })
     this.chromeView.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+
+    const guardWindowChromeNavigation = (details: {
+      url: string
+      preventDefault: () => void
+    }): void => {
+      if (details.url !== windowChromeDocumentUrl) {
+        details.preventDefault()
+      }
+    }
+    this.windowChromeView.webContents.on('will-navigate', guardWindowChromeNavigation)
+    this.windowChromeView.webContents.on('will-redirect', guardWindowChromeNavigation)
+    this.windowChromeView.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   }
 
   private handleCommittedNavigation(url: string): void {

@@ -46,6 +46,8 @@ body {
 button,
 input {
   font: inherit;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
 }
 
 button {
@@ -134,7 +136,11 @@ button:disabled {
   gap: 16px;
   align-items: center;
   min-height: 54px;
+  cursor: grab;
+  user-select: none;
   border-bottom: 1px solid var(--line);
+  -webkit-app-region: drag;
+  app-region: drag;
 }
 
 .brand {

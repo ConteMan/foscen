@@ -6,20 +6,26 @@ scene 中的任何网页都视为不受信任：页面可能被入侵、重定�
 
 ## 进程与导航基线
 
-| 边界          | 策略                                                                   |
-| ------------- | ---------------------------------------------------------------------- |
-| Node.js       | 所有 View `nodeIntegration: false`                                     |
-| 上下文        | `contextIsolation: true`                                               |
-| 沙箱          | `app.enableSandbox()` 且所有 View `sandbox: true`                      |
-| Web 安全      | `webSecurity: true`、禁止不安全混合内容和 `<webview>`                  |
-| preload       | scene 无 preload；chrome 只暴露逐项方法，不暴露原始 `ipcRenderer`      |
-| IPC           | 固定 channel；验证 sender、主 frame、精确本地 URL 与运行时参数         |
-| 导航          | 用户输入、页面跳转和重定向只允许无凭据 HTTPS；唯一例外是精确内置落地页 |
-| 新窗口/协议   | `setWindowOpenHandler` 默认拒绝；网页 URL 不交给系统 shell             |
-| Session       | scene 使用独立持久分区，chrome 使用独立内存分区                        |
-| 实例/生命周期 | 单实例锁；窗口关闭时卸载 Session 监听器并显式关闭两个 `webContents`    |
+| 边界          | 策略                                                                |
+| ------------- | ------------------------------------------------------------------- |
+| Node.js       | 所有 View `nodeIntegration: false`                                  |
+| 上下文        | `contextIsolation: true`                                            |
+| 沙箱          | `app.enableSandbox()` 且所有 View `sandbox: true`                   |
+| Web 安全      | `webSecurity: true`、禁止不安全混合内容和 `<webview>`               |
+| preload       | scene/window chrome 无 preload；control 只暴露逐项方法              |
+| IPC           | 固定 channel；验证 sender、主 frame、精确本地 URL 与运行时参数      |
+| 导航          | scene 只允许无凭据 HTTPS 与精确落地页；可信 View 只允许各自本地文档 |
+| 新窗口/协议   | `setWindowOpenHandler` 默认拒绝；网页 URL 不交给系统 shell          |
+| Session       | scene 使用独立持久分区；window chrome/control 使用独立内存分区      |
+| 实例/生命周期 | 单实例锁；窗口关闭时卸载 Session 监听器并显式关闭三个 `webContents` |
 
 ## 桌面能力
+
+### 窗口交互层
+
+默认边框模式的拖动只由随包本地 window chrome 顶部外框提供。该 View 无脚本、preload、Node 和 IPC，位于 scene 下方；导航与重定向只允许自身精确 `file:` URL，新窗口默认拒绝。scene 不获得 `app-region` 或窗口 API。
+
+边框模式通过 scene 内缩让可信外框与网页输入在空间上分离；极简模式隐藏 window chrome 并让 scene 铺满窗口。macOS 交通灯默认隐藏不改变权限边界，应用菜单和可信控制面快捷键必须保留恢复路径。控制面顶部属于可信拖动区，其按钮、输入和其他控件必须显式 `no-drag`。不得把任意网页 DOM、URL 或输入映射成拖动／非拖动区域；若边框影响目标网页，应复审布局或尺寸，而不是覆盖 scene 或向其注入能力。
 
 ### 权限
 

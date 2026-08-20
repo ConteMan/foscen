@@ -3,7 +3,7 @@ import { cp, mkdir } from 'node:fs/promises'
 const sourceRoot = new URL('../src/', import.meta.url)
 const outputRoot = new URL('../dist/', import.meta.url)
 
-for (const directory of ['renderer', 'scene']) {
+for (const directory of ['renderer', 'scene', 'window-chrome']) {
   await mkdir(new URL(`${directory}/`, outputRoot), { recursive: true })
 
   for (const file of ['index.html', 'styles.css']) {
@@ -14,4 +14,4 @@ for (const directory of ['renderer', 'scene']) {
   }
 }
 
-console.log('Copied renderer and scene static assets.')
+console.log('Copied renderer, scene, and window chrome static assets.')

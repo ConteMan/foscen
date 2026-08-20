@@ -25,6 +25,7 @@ required_files=(
   docs/adr/README.md
   docs/adr/0001-electron-view-boundaries.md
   docs/adr/0002-trusted-capabilities.md
+  docs/adr/0003-trusted-window-shell-and-settings.md
   build/entitlements.plist
   build/entitlements.helper.plist
   build/entitlements.plugin.plist
@@ -34,6 +35,8 @@ required_files=(
   .github/pull_request_template.md
   .github/workflows/selftest.yml
   .github/workflows/release.yml
+  src/window-chrome/index.html
+  src/window-chrome/styles.css
 )
 for path in "${required_files[@]}"; do
   test -f "$path" || fail "缺少 $path"

@@ -1,6 +1,6 @@
 # ADR-0001：使用 BaseWindow + WebContentsView 隔离应用 UI 与网页
 
-- 状态：已接受
+- 状态：已接受，由 [ADR-0003](0003-trusted-window-shell-and-settings.md) 扩展
 - 日期：2026-08-13
 
 ## 背景
@@ -9,12 +9,13 @@ Foscen 需要把网页作为几乎无 chrome 的桌面场景，同时按需叠�
 
 ## 决策
 
-采用 Electron `BaseWindow` 组合两个 `WebContentsView`：
+初始采用 Electron `BaseWindow` 组合两个 `WebContentsView`；ADR-0003 在不改变隔离原则的前提下增加无能力的 window chrome View：
 
 - scene View 加载网页，使用独立持久 Session，不配置 preload；
 - chrome View 只加载随应用发布的本地资源，使用独立内存 Session 和最小 preload；
+- window chrome View 只加载随包本地 HTML/CSS，无 preload、Node 或 IPC；边框模式下位于 scene 下方，不覆盖网页输入；
 - 主进程拥有布局、导航、快捷键、安全策略和资源释放；
-- macOS 使用 `titleBarStyle: hiddenInset`，保留原生交通灯，不启用透明窗口。
+- macOS 使用 `titleBarStyle: hiddenInset` 且不启用透明窗口；交通灯由可信窗口设置控制，当前默认隐藏。
 
 ## 后果
 

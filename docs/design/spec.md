@@ -1,6 +1,6 @@
 # 推荐方向 A：可实现设计规范
 
-本文把 [directions.md](directions.md) 的方向 A 写到可直接画稿/实现的数值。token 名以 [tokens.json](tokens.json) 为准。阶段二才改 `src/`。
+**已并入 [omnibar.md](omnibar.md)。** 画稿与实现以那份为唯一事实源。本文保留作归档。
 
 ## 1. 信息架构
 

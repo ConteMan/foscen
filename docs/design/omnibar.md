@@ -4,7 +4,7 @@
 
 阶段二才改 `src/`。不要把关键数值只写在原型 CSS 里。
 
-相关：评估 [current-assessment.md](current-assessment.md) · token [tokens.json](tokens.json) · 原型 [omnibar-prototype.html](omnibar-prototype.html) · ADR [0004](../adr/0004-on-demand-omnibar.md)。
+相关：评估 [current-assessment.md](current-assessment.md) · token [tokens.json](tokens.json) · 原型 [omnibar-prototype.html](omnibar-prototype.html) · 文案 [copy.md](copy.md) · 无障碍 [a11y.md](a11y.md) · 测试 [test-plan.md](test-plan.md) · ADR [0004](../adr/0004-on-demand-omnibar.md)。
 
 ---
 

@@ -9,6 +9,9 @@
 | [style-compare.html](style-compare.html)         | 甲乙丙同一「空态 + 三条建议」                 |
 | [tokens.json](tokens.json)                       | 机器可读 token                                |
 | [brand.md](brand.md)                             | 16px 实测与品牌用法                           |
+| [a11y.md](a11y.md)                               | ARIA combobox / tablist 实现断言              |
+| [test-plan.md](test-plan.md)                     | 单测 / smoke / 人工分层                       |
+| [copy.md](copy.md)                               | 全部中文微文案                                |
 | [current-assessment.md](current-assessment.md)   | 实地评估                                      |
 | [current/](current/)                             | 现状截图                                      |
 | [explorations/](explorations/)                   | 生图与 16px 栅格                              |

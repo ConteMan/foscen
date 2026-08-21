@@ -59,3 +59,13 @@
 | 落地页            | 维持现有大号字标，不改                                                                                                           |
 
 关于页锁区气质：[about-lockup-wordmark.jpg](explorations/about-lockup-wordmark.jpg)（生图，字可能不准；实现用 SVG + `textContent`）。
+
+续探（非正式稿，16px 仍以 SVG 变体为准）：
+
+- [mark-16-from-brand-no-f.jpg](explorations/mark-16-from-brand-no-f.jpg) 从正式标简化去 F
+- [mark-16-pixel-corners-square.jpg](explorations/mark-16-pixel-corners-square.jpg)
+- [mark-16-pixel-f-only.jpg](explorations/mark-16-pixel-f-only.jpg)
+- [mark-16-pixel-corners-only.jpg](explorations/mark-16-pixel-corners-only.jpg)
+- 乙实色氛围 [mood-style-yi-solid.jpg](explorations/mood-style-yi-solid.jpg)
+- 丙纸感氛围 [mood-style-bing-paper.jpg](explorations/mood-style-bing-paper.jpg)
+- 空态静物 [empty-state-desk-frame.jpg](explorations/empty-state-desk-frame.jpg)

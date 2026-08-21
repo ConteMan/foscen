@@ -1,67 +1,61 @@
-# 品牌、配色与 Logo 方向
+# 品牌应用（不是新 Logo）
 
-核对对象：`assets/brand/`（`foscen-icon.svg`、`foscen-wordmark.svg`、README）。探索图在 [explorations/](explorations/)，由 Grok 的 `image_gen` / `image_edit` 生成，**不是**可实现像素稿；UI 结构以 HTML 原型和 token 为准。
+正式资产：`assets/brand/foscen-icon.svg`（聚焦框 + 场景方块 + F）。颜色合同：`#0B2018` / `#123426` / `#1D4D39` 场，`#72DBA5` 聚焦绿，`#E8FFF2` / `#A6E8C4` 高光。不重做 `foscen.icns`。
 
-## 1. 现有资产成立吗？
+实测栅格在 [explorations/brand-scale/](explorations/brand-scale/)，用 `qlmanage -t -s N` 从 SVG 渲出，再用邻近插值 ×8 看像素，不是目测推断。
 
-成立。图标语义清楚：四角聚焦框 + 中间场景方块 + 方块里的 F = Focus + Scene。颜色已经写成合同：
+## 16px 实测结论
 
-| 角色     | hex                               |
-| -------- | --------------------------------- |
-| 深色场   | `#0B2018` / `#123426` / `#1D4D39` |
-| 聚焦绿   | `#72DBA5`                         |
-| 场景高光 | `#E8FFF2` / `#A6E8C4`             |
+[icon-16-x8.png](explorations/brand-scale/icon-16-x8.png)：16×16 时四角框仍可辨认为「窗口」。中间薄荷方还在。**F 消失**，只剩方块里一块略深的糊斑。阴影完全看不见。圆角底板还在，占掉边缘 1px。
 
-落地页（`src/scene/styles.css`）用纸色 `#F2F5F1` + 墨绿字，和品牌是同一家族。窗口外框暗色 `#1C211E` 也合适。
+[icon-24-x8.png](explorations/brand-scale/icon-24-x8.png)：24px（工作面 header 规格）四角和方块清楚，F 能看出是字母但锯齿重。
 
-**出问题的是控制面，不是品牌。** 控制面把 accent 推到 `#a5f4c5`，再加 18px 圆角、80px 阴影和径向光斑，看起来像另一套霓虹玻璃产品。字母 `F` 方块（`src/renderer/index.html` 18 行）直接违反 ADR-0003 和品牌 README。
+[icon-32-x8.png](explorations/brand-scale/icon-32-x8.png)：32px 起 F 可读。64px 起与设计稿一致。
 
-## 2. 配色主张
+所以：**16px 不能直接缩放正式图标还指望认出 F。**
 
-**主方案：留在品牌森林绿，把控制面拉回 `#72DBA5`，不要更亮。**
+## 要不要 16px 专用简化变体
 
-理由：
+要，但**只给 16px 场景**（若有）。工作面 header 用 24px 正式 SVG，不必换变体。
 
-- 图标、wordmark、落地页、外框已经统一。换色等于重做系统身份。
-- 「低干扰」靠降低饱和填充和缩小面板，不靠改成灰黑再点一个绿点。
-- 控制面 92% 不透明深场 `#0B2018` 已经够压住网页；强调只用 1px 线和 14% 高亮底。
+三个候选都按 16×16 重画（去掉阴影、加粗描边）：
 
-具体 hex 见 [tokens.json](tokens.json)。对比：
+| 候选                | 图                                                                                | 结论                                                             |
+| ------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| 四角 + 实心方，无 F | [mark-16-corners-square.svg](explorations/brand-scale/mark-16-corners-square.svg) | **采用**。16px 上 F 本就不可读，去掉它让方块更稳；四角仍是 Focus |
+| 只留 F 方块         | [mark-16-f-only.svg](explorations/brand-scale/mark-16-f-only.svg)                 | 否。失去「框」语义，像通用文件图标                               |
+| 只留四角            | [mark-16-corners-only.svg](explorations/brand-scale/mark-16-corners-only.svg)     | 否。空心框在 16px 对比不够                                       |
 
-|      | 现状控制面                       | 主张                         |
-| ---- | -------------------------------- | ---------------------------- |
-| 强调 | `#a5f4c5`                        | `#72DBA5`                    |
-| 面板 | `rgb(10 31 23 / 96%)` + 径向光斑 | `rgb(11 32 24 / 92%)` 无光斑 |
-| 正文 | `#eef9f2`                        | `#E8FFF2`（品牌高光）        |
-| 圆角 | 18                               | 12（A）/ 14（B）/ 10（C）    |
+地址条 **16px 工具图标**（后退/前进/刷新/关闭）不是品牌标，用 `currentColor` 描边，不要塞正式图标。
 
-**备选（不推荐做主方案）：** 炭灰底 `#161A18` + 单一 `#72DBA5` 描边，见 [explorations/color-mood-charcoal-accent.jpg](explorations/color-mood-charcoal-accent.jpg)。只在用户觉得森林绿「太主题化」时启用。图标和 Dock 仍保持现有绿，避免系统身份和控制面割裂。
+实现阶段把 16px 变体做成随包 SVG（例如 `foscen-mark-16.svg`），CSP 仍 `img-src 'self'`。今晚不改 `assets/`。
 
-物理色板氛围：[explorations/color-moodboard-forest.jpg](explorations/color-moodboard-forest.jpg)。
+## 聚焦绿在深色 UI 里的边界
 
-## 3. Logo 方向
+允许 `#72DBA5`：
 
-应用图标 **不要重做**。`foscen.icns` 由 `./scripts/generate-icon.sh` 从 SVG 生成，打包身份验收走 `Foscen.app`。本任务只决定**控制面里放什么**。
+- 高亮建议行背景（14–18% 透明）
+- 焦点环 2px
+- 选中 tab 底线 2px
+- 甲/乙的主按钮填充
+- 成功状态文字
+- 随包 SVG 内部
 
-| 方向             | 主张                               | 探索图                                                                        | 结论                                  |
-| ---------------- | ---------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------- |
-| L1 现标缩小      | 四角框 + 薄荷方 + F，24px 描边加粗 | [logo-inapp-24px-from-brand.jpg](explorations/logo-inapp-24px-from-brand.jpg) | **采用**：与 Dock 一致                |
-| L2 去掉 F        | 只留框和场景方                     | [logo-icon-no-letter.jpg](explorations/logo-icon-no-letter.jpg)               | 否。16px 会变成「空窗口」，F 是辨识锚 |
-| L3 极细框        | 四段独立圆角描边                   | [logo-minimal-frame.jpg](explorations/logo-minimal-frame.jpg)                 | 否。太像通用「裁切」图标              |
-| L4 暗色 wordmark | 24px 标 + 「Foscen」               | [logo-wordmark-dark-chrome.jpg](explorations/logo-wordmark-dark-chrome.jpg)   | 工作面 header 用；地址条不用          |
-| L5 16px 栅格     | 四角点 + 中心块                    | [logo-16px-pixel-study.jpg](explorations/logo-16px-pixel-study.jpg)           | 作绘制参考，不单独做点阵字体          |
+禁止：
 
-控制面规则：
+- 丙的面板底、输入默认描边、主按钮填充、页脚
+- 用 `#a5f4c5` 代替品牌绿
+- 字母 F 的 CSS 方块
+- 16px 导航图标填绿
 
-- 地址条 / palette：**不放**品牌。省垂直空间。
-- 工作面 header：24px `foscen-icon.svg` + 15/600「Foscen」。
-- 落地页可继续用大号字标，不改。
-- 禁止再用 CSS 方块 + 字母 F。
+## 各表面用法
 
-## 4. 材质
+| 表面              | 用法                                                                                                                             |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 地址条 / 命令面板 | 不放品牌                                                                                                                         |
+| 工作面标题        | 24px 正式 `foscen-icon.svg` + 标题 15/600                                                                                        |
+| 关于              | 24px 标 + Foscen + Focus + Scene + 版本 + MIT                                                                                    |
+| 空态              | 可选 48px 四角框，文案 12/400。探索气质图：[empty-state-frame-object.jpg](explorations/empty-state-frame-object.jpg)（非正式稿） |
+| 落地页            | 维持现有大号字标，不改                                                                                                           |
 
-面板：92% 深场 + `blur(20px) saturate(1.2)` + 内侧 1px `rgb(232 255 242 / 8%)`。不是厚重玻璃砖。边缘研究：[explorations/material-frosted-glass-edge.jpg](explorations/material-frosted-glass-edge.jpg)（氛围，圆角以 token 12px 为准）。
-
-## 5. 给 Pencil 的一句话
-
-画控制面时把品牌当**已经存在的 SVG 标**，不要发明新 Logo；把绿色从霓虹拉回 `#72DBA5`；地址条上不要出现 wordmark。
+关于页锁区气质：[about-lockup-wordmark.jpg](explorations/about-lockup-wordmark.jpg)（生图，字可能不准；实现用 SVG + `textContent`）。

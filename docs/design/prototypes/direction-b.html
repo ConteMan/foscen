@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>方向 B · 统一 palette</title>
+    <style>
+      :root {
+        font-family:
+          Inter,
+          ui-sans-serif,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        color: #e8fff2;
+        --accent: #72dba5;
+        --muted: #9bb5a8;
+        --panel: rgb(11 32 24 / 92%);
+        --line: rgb(114 219 165 / 22%);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      body {
+        margin: 0;
+        background: #0a0e0c;
+      }
+      .bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        padding: 14px 20px;
+        background: #111714;
+        border-bottom: 1px solid rgb(232 255 242 / 8%);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .bar button {
+        min-height: 28px;
+        padding: 0 10px;
+        color: var(--muted);
+        font: inherit;
+        background: transparent;
+        border: 1px solid rgb(232 255 242 / 12%);
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .bar button[aria-pressed='true'] {
+        color: #0b2018;
+        background: var(--accent);
+        border-color: transparent;
+        font-weight: 600;
+      }
+      .note {
+        padding: 12px 20px;
+        color: var(--muted);
+        font-size: 13px;
+        border-bottom: 1px solid rgb(232 255 242 / 8%);
+      }
+      .stage {
+        display: grid;
+        place-items: center;
+        padding: 32px 16px;
+      }
+      .window {
+        position: relative;
+        width: min(100%, 1280px);
+        height: min(72vh, 800px);
+        overflow: hidden;
+        background: #1c211e;
+        border-radius: 10px;
+      }
+      .scene {
+        position: absolute;
+        inset: 10px;
+        padding: 28px 48px;
+        color: #173427;
+        background: #f3f1eb;
+        border-radius: 8px;
+      }
+      .scene h2 {
+        margin: 48px 0 0;
+        font-size: 40px;
+        letter-spacing: -0.04em;
+      }
+      .overlay {
+        position: absolute;
+        left: 50%;
+        top: 88px;
+        width: 600px;
+        overflow: hidden;
+        background: var(--panel);
+        border: 1px solid rgb(232 255 242 / 10%);
+        border-radius: 14px;
+        box-shadow: 0 16px 40px rgb(0 8 5 / 38%);
+        transform: translateX(-50%);
+        backdrop-filter: blur(20px);
+      }
+      .overlay.is-wide {
+        top: 64px;
+        width: 680px;
+      }
+      .drag {
+        height: 10px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr) 28px;
+        gap: 6px;
+        align-items: center;
+        padding: 0 8px 8px;
+      }
+      .mode {
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-align: center;
+      }
+      input {
+        width: 100%;
+        height: 36px;
+        padding: 0 10px;
+        color: #e8fff2;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        background: rgb(2 17 10 / 45%);
+        border: 1px solid rgb(114 219 165 / 32%);
+        border-radius: 8px;
+        outline: none;
+      }
+      input:focus {
+        box-shadow: 0 0 0 3px rgb(114 219 165 / 18%);
+      }
+      .icon {
+        width: 28px;
+        height: 28px;
+        color: inherit;
+        background: transparent;
+        border: 0;
+        border-radius: 8px;
+      }
+      .option {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        min-height: 38px;
+        padding: 0 14px;
+      }
+      .option[aria-selected='true'] {
+        background: rgb(114 219 165 / 14%);
+      }
+      .option span {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .option strong {
+        display: block;
+        font-size: 13px;
+      }
+      kbd {
+        padding: 1px 5px;
+        color: var(--muted);
+        font: inherit;
+        font-size: 11px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+      }
+      .foot {
+        display: flex;
+        gap: 14px;
+        min-height: 28px;
+        padding: 0 14px 8px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .form {
+        display: flex;
+        gap: 8px;
+        padding: 8px 14px 14px;
+      }
+      .form input {
+        flex: 1;
+      }
+      .primary {
+        height: 36px;
+        padding: 0 12px;
+        color: #123426;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        background: var(--accent);
+        border: 0;
+        border-radius: 8px;
+      }
+      .card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 0 14px 8px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <strong>方向 B · 评审</strong>
+      <button type="button" data-mode="go" aria-pressed="true">go · ⌘L</button>
+      <button type="button" data-mode="command" aria-pressed="false">command · ⌘⇧P</button>
+      <button type="button" data-mode="scenes" aria-pressed="false">scenes · ⌘S</button>
+    </div>
+    <p class="note">
+      同一个 600→680 宽的壳。左侧 52px 模式标签标明当前输入框语义。场景 mode 会把 View
+      先放大再填实底，避免动画期间出现透明命中区。
+    </p>
+    <div class="stage">
+      <div class="window">
+        <div class="scene">
+          <p style="letter-spacing: 0.18em; font-size: 11px; color: #377657">FOCUS + SCENE</p>
+          <h2>一个壳，三种解释。</h2>
+          <p style="color: #607168">输入框有时是地址，有时是命令，有时是场景名。</p>
+        </div>
+        <div class="overlay" data-overlay role="dialog" aria-label="Foscen">
+          <div class="drag"></div>
+          <div class="row">
+            <div class="mode" data-mode-label>打开</div>
+            <input id="q" placeholder="打开场景" />
+            <button class="icon" type="button" aria-label="关闭">×</button>
+          </div>
+          <div data-go>
+            <div class="option" aria-selected="true">
+              <div><strong>当前场景</strong><span>https://notes.example/now</span></div>
+            </div>
+            <div class="option">
+              <div><strong>Foscen 仓库</strong><span>https://github.com/ConteMan/foscen</span></div>
+            </div>
+            <div class="option">
+              <div><strong>项目板</strong><span>https://board.example/now</span></div>
+            </div>
+          </div>
+          <div data-command hidden>
+            <div class="option" aria-selected="true">
+              <div><strong>打开网页</strong></div>
+              <kbd>⌘ L</kbd>
+            </div>
+            <div class="option">
+              <div><strong>保存截图</strong></div>
+              <kbd>⌘ ⇧ S</kbd>
+            </div>
+            <div class="option">
+              <div><strong>保存场景</strong></div>
+              <kbd>⌘ S</kbd>
+            </div>
+            <div class="option">
+              <div><strong>下载</strong></div>
+              <kbd>⌘ J</kbd>
+            </div>
+            <div class="option">
+              <div><strong>设置</strong></div>
+              <kbd>⌘ ,</kbd>
+            </div>
+          </div>
+          <div data-scenes hidden>
+            <form class="form" onsubmit="return false">
+              <input placeholder="给当前网页起个名字" />
+              <button class="primary" type="button">保存</button>
+            </form>
+            <article class="card">
+              <div><strong>写作索引</strong><span>https://notes.example/</span></div>
+              <button class="primary" type="button">打开</button>
+            </article>
+          </div>
+          <div class="foot">
+            <span>Esc 关闭</span><span data-foot-hint>⌘⇧P 切到命令</span><span>同一壳不关闭</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const overlay = document.querySelector('[data-overlay]')
+      const label = document.querySelector('[data-mode-label]')
+      const input = document.querySelector('#q')
+      const hint = document.querySelector('[data-foot-hint]')
+      const panes = {
+        go: document.querySelector('[data-go]'),
+        command: document.querySelector('[data-command]'),
+        scenes: document.querySelector('[data-scenes]'),
+      }
+      const copy = {
+        go: ['打开', '打开场景', '⌘⇧P 切到命令'],
+        command: ['命令', '执行命令', '⌘L 切到打开'],
+        scenes: ['场景', '给当前网页起个名字', '⌘L 回到打开'],
+      }
+      document.querySelectorAll('[data-mode]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const mode = button.dataset.mode
+          document.querySelectorAll('[data-mode]').forEach((item) => {
+            item.setAttribute('aria-pressed', String(item === button))
+          })
+          overlay.classList.toggle('is-wide', mode === 'scenes')
+          Object.entries(panes).forEach(([key, node]) => {
+            node.hidden = key !== mode
+          })
+          const [modeLabel, placeholder, foot] = copy[mode]
+          label.textContent = modeLabel
+          input.placeholder = placeholder
+          hint.textContent = foot
+          if (mode !== 'scenes') input.focus()
+        })
+      })
+    </script>
+  </body>
+</html>

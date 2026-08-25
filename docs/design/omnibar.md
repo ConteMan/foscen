@@ -201,83 +201,81 @@ Tab 在 header 关闭、tablist、内容控件间循环。tablist 左右箭头�
 
 ## 6. 三套视觉风格（唯一留给用户挑的选择）
 
-信息架构、尺寸、状态、键盘全部不变。只变材质。对照原型：同一「空态 + 三条建议」画三次，见 [style-compare.html](style-compare.html)。
+2026-08-25：色相改为黑白灰。差异只剩材质与对比度，不再有品牌绿。布局数字不变。对照：[style-compare.html](style-compare.html)。
 
-共用排版（三套相同）：输入 14/500/20，标题 13/600/18，辅文 11/400/16，页脚 11/400/16，面板圆角除外见下，控件圆角 8，图标按钮 28，图标描边 1.75。
+共用：输入 14/500/20，标题 13/600/18，辅文 11/400/16，页脚 11/400/16，控件圆角 8，图标 lucide 描边 1.75。默认图标 `muted`，激活行/焦点内 `text`，footer `dim`。无强调色。
+
+焦点环三套共用：`2px solid rgb(255 255 255 / 70%)`，offset `2px`。
+
+错误不靠颜色：输入边框升到 `rgb(255 255 255 / 32%)`；行左 `lucide: alert-triangle`、`fill: #F5F5F7`；文案用 `text` 而非 `muted`。
 
 ### 甲 · 玻璃
 
-半透明森林场，blur 出网页层次。最接近当前方案，也最吃 GPU、最受底层网页颜色影响。
+半透明中性面板，blur 出网页层次。最吃 GPU，底层网页颜色会渗进来。
 
-| token                          | 值                                     |
-| ------------------------------ | -------------------------------------- |
-| panel                          | `rgb(11 32 24 / 88%)`                  |
-| blur                           | `blur(20px) saturate(1.2)`             |
-| border                         | `1px solid rgb(232 255 242 / 12%)`     |
-| radius.panel                   | 12                                     |
-| shadow                         | `0 16px 40px rgb(0 8 5 / 38%)`         |
-| inset                          | `inset 0 1px 0 rgb(232 255 242 / 10%)` |
-| input-bg                       | `rgb(2 17 10 / 45%)`                   |
-| input-border                   | `rgb(114 219 165 / 32%)`               |
-| text                           | `#E8FFF2`                              |
-| muted                          | `#9BB5A8`                              |
-| accent                         | `#72DBA5`                              |
-| option-active                  | `rgb(114 219 165 / 16%)`               |
-| line                           | `rgb(114 219 165 / 18%)`               |
-| primary-fill                   | `#72DBA5`                              |
-| primary-ink                    | `#123426`                              |
-| `prefers-reduced-transparency` | 降为乙的实色值                         |
+| token                          | 值                                    |
+| ------------------------------ | ------------------------------------- |
+| panel                          | `rgb(20 20 22 / 82%)`                 |
+| blur                           | `blur(24px) saturate(1.1)`            |
+| border                         | `1px solid rgb(255 255 255 / 12%)`    |
+| radius.panel                   | 12                                    |
+| shadow                         | `0 16px 40px rgb(0 0 0 / 45%)`        |
+| inset                          | `inset 0 1px 0 rgb(255 255 255 / 8%)` |
+| input-bg                       | `rgb(0 0 0 / 32%)`                    |
+| input-border                   | `rgb(255 255 255 / 12%)`              |
+| text                           | `#F5F5F7`                             |
+| muted                          | `#A1A1A6`                             |
+| option-active                  | `rgb(255 255 255 / 10%)`              |
+| line                           | `rgb(255 255 255 / 8%)`               |
+| primary-fill                   | `#F5F5F7`                             |
+| primary-ink                    | `#131315`                             |
+| `prefers-reduced-transparency` | `#1C1C1E`，blur none                  |
 
 ### 乙 · 实色（推荐默认）
 
-完全不透明。无 blur。边界靠 1px 描边 + 阴影。浅色网页、深色网页、滚动中的视频上外观稳定。`prefers-reduced-transparency` 无需分支。
+完全不透明。无 blur。边界靠 1px 描边 + 阴影。浅色、深色、视频网页上都稳。`prefers-reduced-transparency` 无需分支。
 
 | token         | 值                                    |
 | ------------- | ------------------------------------- |
-| panel         | `#10261C`（alpha 100%）               |
+| panel         | `#1C1C1E`                             |
 | blur          | `none`                                |
-| border        | `1px solid rgb(114 219 165 / 28%)`    |
+| border        | `1px solid rgb(255 255 255 / 14%)`    |
 | radius.panel  | 12                                    |
-| shadow        | `0 12px 28px rgb(0 8 5 / 45%)`        |
-| inset         | `inset 0 1px 0 rgb(232 255 242 / 6%)` |
-| input-bg      | `#0B2018`                             |
-| input-border  | `rgb(114 219 165 / 28%)`              |
-| text          | `#E8FFF2`                             |
-| muted         | `#9BB5A8`                             |
-| accent        | `#72DBA5`                             |
-| option-active | `rgb(114 219 165 / 14%)`              |
-| line          | `rgb(114 219 165 / 16%)`              |
-| primary-fill  | `#72DBA5`                             |
-| primary-ink   | `#123426`                             |
+| shadow        | `0 12px 28px rgb(0 0 0 / 50%)`        |
+| inset         | `inset 0 1px 0 rgb(255 255 255 / 6%)` |
+| input-bg      | `#121214`                             |
+| input-border  | `rgb(255 255 255 / 14%)`              |
+| text          | `#F5F5F7`                             |
+| muted         | `#A1A1A6`                             |
+| option-active | `rgb(255 255 255 / 9%)`               |
+| line          | `rgb(255 255 255 / 8%)`               |
+| primary-fill  | `#F5F5F7`                             |
+| primary-ink   | `#1C1C1E`                             |
 
-### 丙 · 纸感 / 低对比
+### 丙 · 硬边纯黑
 
-中性暗面板，接近 macOS 深色 vibrancy。聚焦绿**只**用在高亮行和焦点环。面板本身不染绿。品牌绿留给图标 SVG 与上述两处强调。
+对比度最高。无 blur、无 inset 高光。原「纸感」在黑白灰里与玻璃分不清，故替换。
 
-| token                          | 值                                       |
-| ------------------------------ | ---------------------------------------- |
-| panel                          | `rgb(36 36 38 / 86%)`                    |
-| blur                           | `blur(24px) saturate(1.35)`              |
-| border                         | `1px solid rgb(255 255 255 / 12%)`       |
-| radius.panel                   | 10                                       |
-| shadow                         | `0 10px 24px rgb(0 0 0 / 28%)`           |
-| inset                          | `inset 0 0.5px 0 rgb(255 255 255 / 14%)` |
-| input-bg                       | `rgb(0 0 0 / 28%)`                       |
-| input-border                   | `rgb(255 255 255 / 14%)`                 |
-| text                           | `#F5F5F7`                                |
-| muted                          | `#A1A1A6`                                |
-| accent                         | `#72DBA5`（仅高亮行、焦点环、tab 底线）  |
-| option-active                  | `rgb(114 219 165 / 18%)`                 |
-| line                           | `rgb(255 255 255 / 8%)`                  |
-| primary-fill                   | `#F5F5F7`                                |
-| primary-ink                    | `#1C1C1E`                                |
-| `prefers-reduced-transparency` | panel `#2C2C2E`，blur none               |
-
-丙禁止：用聚焦绿填主按钮、染面板、做输入默认描边、做页脚强调。图标按钮用 `text` 色，不用 accent。
+| token         | 值                                 |
+| ------------- | ---------------------------------- |
+| panel         | `#000000`                          |
+| blur          | `none`                             |
+| border        | `1px solid rgb(255 255 255 / 22%)` |
+| radius.panel  | 8                                  |
+| shadow        | `0 8px 24px rgb(0 0 0 / 60%)`      |
+| inset         | `none`                             |
+| input-bg      | `#000000`                          |
+| input-border  | `rgb(255 255 255 / 22%)`           |
+| text          | `#FFFFFF`                          |
+| muted         | `#8E8E93`                          |
+| option-active | `rgb(255 255 255 / 14%)`           |
+| line          | `rgb(255 255 255 / 14%)`           |
+| primary-fill  | `#FFFFFF`                          |
+| primary-ink   | `#000000`                          |
 
 ### 推荐：乙 · 实色
 
-覆盖层压在任意 HTTPS 网页上。玻璃会吸入底层图片/绿色站点，层次不稳定。Foscen 已有不透明窗口外框，实色覆盖层和它一致。无 blur 也无 reduced-transparency 分支。甲留给「要展示材质」的场合；丙最像系统，但中性灰面板会和 Dock 里的森林绿图标略分家。
+覆盖层压在任意 HTTPS 网页上。玻璃会吸入底层颜色；纯黑对比最强但切边更硬。乙与不透明窗口外框一致，无 blur 分支。
 
 ---
 

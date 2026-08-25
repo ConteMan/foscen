@@ -85,7 +85,7 @@ y      = clamp(round(windowHeight * 0.10), 56, 96)
 
 键盘：焦点留在输入框（ARIA 1.2 combobox）。`↓↑` 循环高亮并 `preventDefault`。`Enter` 激活。`Tab` 把高亮 URL/名称填进输入，不提交。`Esc` / scene mousedown / 关闭钮 → 关闭。`⌘L` 在其它覆盖层时切到地址条并全选。
 
-combobox：`aria-expanded` `aria-autocomplete="list"` `aria-controls` `aria-activedescendant`。列表 `listbox` / `option`。错误行兼 `status` + `aria-live="polite"`。对话框 `role="dialog"` `aria-modal="true"` `aria-label="打开场景"`。焦点环 2px `#72DBA5` offset 2。
+combobox：`aria-expanded` `aria-autocomplete="list"` `aria-controls` `aria-activedescendant`。列表 `listbox` / `option`。错误行兼 `status` + `aria-live="polite"`。对话框 `role="dialog"` `aria-modal="true"` `aria-label="打开场景"`。焦点环 `2px solid rgb(255 255 255 / 70%)` offset 2。
 
 ---
 
@@ -151,7 +151,7 @@ placeholder：`搜索命令`。页脚：`Esc 关闭` · `⌘L 打开地址条`�
 
 ### Tab
 
-宽随文字，高度 36，字 12/500，选中 13/600 + 底边 2px 强调色（token `accent`，丙同样用聚焦绿——这是允许的强调用法）。左右箭头、Home/End 循环 tab。计数徽章：场景数 / 下载数，min 18×18，字 10；权限待办若 >0 用 accent 底 + `accent-ink` 字。
+宽随文字，高度 36，字 12/500，选中 13/600 + 底边 2px `text`。左右箭头、Home/End 循环 tab。计数徽章：场景数 / 下载数，min 18×18，字 10；权限待办若 >0 用 `text` 底 + `primaryInk` 字。
 
 ### 场景
 
@@ -170,7 +170,7 @@ placeholder：`搜索命令`。页脚：`Esc 关闭` · `⌘L 打开地址条`�
 | 空态文案   | 「还没有保存场景。」12/400，居中，padding 24 0 |
 | 空态插图   | 可选 48px 四角框标，见品牌节；无插图也可以     |
 
-保存空名：输入危险描边，不提交，文案「请输入场景名称」放在输入下 11/400 danger，不当 header 状态。删除先 `confirm`。
+保存空名：输入边框升到 `rgb(255 255 255 / 32%)`，不提交，文案「请输入场景名称」用 `text` 放在输入下，不当 header 状态。删除先 `confirm`。
 
 键盘：打开时焦点在名称输入。`Enter` 在输入内 = 保存。列表里 Tab 到打开/删除。
 
@@ -188,7 +188,7 @@ placeholder：`搜索命令`。页脚：`Esc 关闭` · `⌘L 打开地址条`�
 
 - 窗口：边框/极简、交通灯（macOS）——本阶段只画开关位。
 - 权限：复用现有记录列表与撤销，行高 48。
-- 更新：标题 14/600 + 说明 12 muted + 版本 11 monospace accent +「检查升级」按钮。
+- 更新：标题 14/600 + 说明 12 muted + 版本 11 monospace `text` +「检查升级」按钮。
 - 关于：24px 标 + 「Foscen」15/600 + `Focus + Scene` 11 muted + 版本 + MIT。不要再放字母 F 方块。
 
 `⌘,` 打开设置顶部。`⌘U` 打开并聚焦更新按钮。
@@ -295,20 +295,13 @@ Tab 在 header 关闭、tablist、内容控件间循环。tablist 左右箭头�
 
 ---
 
-## 8. 品牌绿用法边界
+## 8. 品牌标
 
-正式资产就是 `assets/brand/foscen-icon.svg`，不设计新 Logo。实测见 [brand.md](brand.md)。
+覆盖层用 [brand-neutral.svg](brand-neutral.svg)。随包绿标不在本阶段替换。实测见 [brand.md](brand.md)。
 
-| 允许用 `#72DBA5`      | 不允许                                   |
-| --------------------- | ---------------------------------------- |
-| 高亮建议行背景        | 面板底色（丙尤其禁止）                   |
-| 焦点环                | 地址条输入的默认描边（丙）               |
-| 选中 tab 底线         | 页脚文字                                 |
-| 主按钮填充（仅甲/乙） | 16px 工具图标（后退等用 `currentColor`） |
-| 进度/成功状态         | 用字母 `F` 方块代替 SVG                  |
-| 随包 SVG 内部         | 径向霓虹光斑、`#a5f4c5`                  |
+地址条不放 wordmark。工作面 header：24px 中性标 + 标题。关于：24px 标 + 名称 + 版本。空态：可选 48px 四角框。禁止字母 F 的 CSS 方块。
 
-地址条不放 wordmark。工作面 header：24px `foscen-icon.svg` + 标题。关于：24px 标 + 名称 + 版本。空态：可选 48px 四角框，不要插画故事。
+废止的绿版（2026-08-25 前）hex 见 `tokens.json` 的 `deprecatedColor`。
 
 ---
 

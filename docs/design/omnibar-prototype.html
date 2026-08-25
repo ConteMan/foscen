@@ -13,49 +13,52 @@
           BlinkMacSystemFont,
           'Segoe UI',
           sans-serif;
-        --text: #e8fff2;
-        --muted: #9bb5a8;
-        --accent: #72dba5;
-        --danger: #ffb5ac;
-        --panel: rgb(11 32 24 / 88%);
-        --blur: blur(20px) saturate(1.2);
-        --border: 1px solid rgb(232 255 242 / 12%);
-        --radius: 12px;
-        --shadow: 0 16px 40px rgb(0 8 5 / 38%);
-        --inset: inset 0 1px 0 rgb(232 255 242 / 10%);
-        --input-bg: rgb(2 17 10 / 45%);
-        --input-border: rgb(114 219 165 / 32%);
-        --option: rgb(114 219 165 / 16%);
-        --line: rgb(114 219 165 / 18%);
-        --primary: #72dba5;
-        --primary-ink: #123426;
-      }
-      [data-style='yi'] {
-        --panel: #10261c;
-        --blur: none;
-        --border: 1px solid rgb(114 219 165 / 28%);
-        --shadow: 0 12px 28px rgb(0 8 5 / 45%);
-        --inset: inset 0 1px 0 rgb(232 255 242 / 6%);
-        --input-bg: #0b2018;
-        --input-border: rgb(114 219 165 / 28%);
-        --option: rgb(114 219 165 / 14%);
-        --line: rgb(114 219 165 / 16%);
-      }
-      [data-style='bing'] {
         --text: #f5f5f7;
         --muted: #a1a1a6;
-        --panel: rgb(36 36 38 / 86%);
-        --blur: blur(24px) saturate(1.35);
+        --dim: #6e6e73;
+        --panel: rgb(20 20 22 / 82%);
+        --blur: blur(24px) saturate(1.1);
         --border: 1px solid rgb(255 255 255 / 12%);
-        --radius: 10px;
-        --shadow: 0 10px 24px rgb(0 0 0 / 28%);
-        --inset: inset 0 0.5px 0 rgb(255 255 255 / 14%);
-        --input-bg: rgb(0 0 0 / 28%);
+        --radius: 12px;
+        --shadow: 0 16px 40px rgb(0 0 0 / 45%);
+        --inset: inset 0 1px 0 rgb(255 255 255 / 8%);
+        --input-bg: rgb(0 0 0 / 32%);
+        --input-border: rgb(255 255 255 / 12%);
+        --option: rgb(255 255 255 / 10%);
+        --line: rgb(255 255 255 / 8%);
+        --primary: #f5f5f7;
+        --primary-ink: #131315;
+        --focus-ring: rgb(255 255 255 / 70%);
+        --error-border: rgb(255 255 255 / 32%);
+      }
+      [data-style='yi'] {
+        --panel: #1c1c1e;
+        --blur: none;
+        --border: 1px solid rgb(255 255 255 / 14%);
+        --shadow: 0 12px 28px rgb(0 0 0 / 50%);
+        --inset: inset 0 1px 0 rgb(255 255 255 / 6%);
+        --input-bg: #121214;
         --input-border: rgb(255 255 255 / 14%);
-        --option: rgb(114 219 165 / 18%);
+        --option: rgb(255 255 255 / 9%);
         --line: rgb(255 255 255 / 8%);
         --primary: #f5f5f7;
         --primary-ink: #1c1c1e;
+      }
+      [data-style='bing'] {
+        --text: #ffffff;
+        --muted: #8e8e93;
+        --panel: #000000;
+        --blur: none;
+        --border: 1px solid rgb(255 255 255 / 22%);
+        --radius: 8px;
+        --shadow: 0 8px 24px rgb(0 0 0 / 60%);
+        --inset: none;
+        --input-bg: #000000;
+        --input-border: rgb(255 255 255 / 22%);
+        --option: rgb(255 255 255 / 14%);
+        --line: rgb(255 255 255 / 14%);
+        --primary: #ffffff;
+        --primary-ink: #000000;
       }
       * {
         box-sizing: border-box;
@@ -67,7 +70,7 @@
         margin: 0;
         min-height: 100vh;
         color: var(--text);
-        background: #0a0e0c;
+        background: #0a0a0b;
       }
       .tools {
         display: flex;
@@ -75,10 +78,10 @@
         gap: 8px;
         align-items: center;
         padding: 12px 16px;
-        color: #9bb5a8;
+        color: #a1a1a6;
         font-size: 12px;
-        background: #111714;
-        border-bottom: 1px solid rgb(232 255 242 / 8%);
+        background: #121214;
+        border-bottom: 1px solid rgb(255 255 255 / 8%);
       }
       .tools button {
         min-height: 28px;
@@ -86,18 +89,18 @@
         color: inherit;
         font: inherit;
         background: transparent;
-        border: 1px solid rgb(232 255 242 / 12%);
+        border: 1px solid rgb(255 255 255 / 12%);
         border-radius: 999px;
       }
       .tools button[aria-pressed='true'] {
-        color: #0b2018;
+        color: #0a0a0b;
         font-weight: 600;
-        background: #72dba5;
+        background: #f5f5f7;
         border-color: transparent;
       }
       .note {
         padding: 10px 16px;
-        color: #9bb5a8;
+        color: #a1a1a6;
         font-size: 13px;
         border-bottom: 1px solid rgb(232 255 242 / 8%);
       }
@@ -192,8 +195,7 @@
         border-radius: 8px;
       }
       .field.is-invalid {
-        border-color: rgb(255 181 172 / 55%);
-        box-shadow: 0 0 0 3px rgb(255 117 104 / 16%);
+        border-color: var(--error-border);
       }
       .field input {
         width: 100%;
@@ -220,7 +222,7 @@
         background: var(--option);
       }
       .option.is-error {
-        color: var(--danger);
+        color: var(--text);
       }
       .option .copy strong {
         display: block;
@@ -250,12 +252,13 @@
         gap: 14px;
         min-height: 28px;
         padding: 0 14px 8px;
+        color: var(--dim);
       }
       .spin {
         width: 14px;
         height: 14px;
-        border: 2px solid rgb(114 219 165 / 25%);
-        border-top-color: var(--accent);
+        border: 2px solid rgb(255 255 255 / 18%);
+        border-top-color: var(--text);
         border-radius: 50%;
         animation: spin 0.7s linear infinite;
       }
@@ -300,7 +303,7 @@
         color: var(--text);
         font-size: 13px;
         font-weight: 600;
-        border-bottom-color: var(--accent);
+        border-bottom-color: var(--text);
       }
       .surface-body {
         padding: 16px;
@@ -342,7 +345,7 @@
       }
       button:focus-visible,
       input:focus-visible {
-        outline: 2px solid var(--accent);
+        outline: 2px solid var(--focus-ring);
         outline-offset: 2px;
       }
     </style>
@@ -410,11 +413,11 @@
                   <path
                     d="M5 9V6.5A1.5 1.5 0 0 1 6.5 5H9M15 5h2.5A1.5 1.5 0 0 1 19 6.5V9M19 15v2.5A1.5 1.5 0 0 1 17.5 19H15M9 19H6.5A1.5 1.5 0 0 1 5 17.5V15"
                     fill="none"
-                    stroke="#72DBA5"
+                    stroke="#F5F5F7"
                     stroke-width="1.8"
                     stroke-linecap="round"
                   />
-                  <rect x="8" y="8" width="8" height="8" rx="2" fill="#72DBA5" />
+                  <rect x="8" y="8" width="8" height="8" rx="2" fill="#F5F5F7" />
                 </svg>
                 场景
               </div>

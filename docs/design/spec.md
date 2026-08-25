@@ -90,33 +90,30 @@ Renderer 在 `rowCount` 变化后 16ms 内 invoke `reportOverlaySize({ width, he
 | header       | 44h，标题 15/600/20，icon 24        |
 | 内容 padding | 16                                  |
 | 场景行       | 48h，不是 52                        |
-| 主按钮       | 36h，字 13/700，背景 `--accent`     |
+| 主按钮       | 36h，字 13/700，背景 `primaryFill`  |
 | tab          | 36h，12/500，选中 13/600 + 2px 底线 |
 
-## 4. 颜色（必须用品牌，不用现状 accent）
+## 4. 颜色（2026-08-25 起为中性黑白灰）
 
-| token           | hex / rgba                            | 用途                 |
-| --------------- | ------------------------------------- | -------------------- |
-| `field.0`       | `#0B2018`                             | 最深场               |
-| `field.1`       | `#123426`                             | 场                   |
-| `field.2`       | `#1D4D39`                             | 场                   |
-| `panel`         | `rgb(11 32 24 / 92%)`                 | 面板                 |
-| `panel.solid`   | `#10261C`                             | reduced-transparency |
-| `text`          | `#E8FFF2`                             | 正文                 |
-| `muted`         | `#9BB5A8`                             | 次要                 |
-| `accent`        | `#72DBA5`                             | 聚焦绿               |
-| `accent.strong` | `#A6E8C4`                             | 悬停高光             |
-| `accent.ink`    | `#123426`                             | 主按钮字             |
-| `danger`        | `#FFB5AC`                             | 错误                 |
-| `danger.soft`   | `rgb(255 117 104 / 16%)`              | 错误底               |
-| `line`          | `rgb(114 219 165 / 18%)`              | 线                   |
-| `line.strong`   | `rgb(114 219 165 / 32%)`              | 输入边               |
-| `frame`         | `#1C211E`                             | 窗口外框（不改）     |
-| `option.active` | `rgb(114 219 165 / 14%)`              | 高亮行               |
-| `shadow`        | `0 16px 40px rgb(0 8 5 / 38%)`        | 面板                 |
-| `inset`         | `inset 0 1px 0 rgb(232 255 242 / 8%)` | 顶高光               |
+完整变体见 [tokens.json](tokens.json) 与 [omnibar.md](omnibar.md) §6。覆盖层不再使用强调色；层级只靠明度。
 
-废弃：`#a5f4c5`、`#c8ffdc`、18px 圆角、`0 28px 80px`、径向光斑。
+| token         | 值                                          | 用途           |
+| ------------- | ------------------------------------------- | -------------- |
+| `neutral-0`   | `#0A0A0B`                                   | 最深底         |
+| `neutral-1`   | `#121214`                                   | 输入底         |
+| `neutral-2`   | `#1C1C1E`                                   | 乙面板         |
+| `neutral-3`   | `#26262A`                                   | 次级面         |
+| `text`        | `#F5F5F7`                                   | 正文、激活图标 |
+| `muted`       | `#A1A1A6`                                   | 次文、默认图标 |
+| `dim`         | `#6E6E73`                                   | footer、占位   |
+| `line`        | `rgb(255 255 255 / 8%)`                     | 分割           |
+| `line-strong` | `rgb(255 255 255 / 14%)`                    | 较强边         |
+| 焦点环        | `2px solid rgb(255 255 255 / 70%)` offset 2 | 三变体共用     |
+| 错误边框      | `rgb(255 255 255 / 32%)`                    | 不设独立红色   |
+
+错误用更亮描边 + `alert-triangle` + `text` 字色，不靠红。无 `danger` token。
+
+废止的绿版（2026-08-25，用户要求更简洁的中性观感）：旧 hex 记在 `tokens.json` 的 `deprecatedColor`。
 
 ## 5. 状态机（地址条）
 
@@ -173,7 +170,7 @@ function buildRows(query, currentUrl, scenes):
 - 错误行同时 `role="status"` `aria-live="polite"`。
 - 对话框：`role="dialog"` `aria-modal="true"` `aria-label="打开场景"`。
 - 工作面保留 tablist 键盘。
-- 焦点可见：`outline: 2px solid #72DBA5; outline-offset: 2px`。
+- 焦点可见：`outline: 2px solid rgb(255 255 255 / 70%); outline-offset: 2px`。
 
 ## 8. 动效
 
@@ -187,15 +184,15 @@ function buildRows(query, currentUrl, scenes):
 
 `prefers-reduced-motion: reduce`：enter/exit 无位移，height 瞬时，spinner 换成静态「加载中」。
 
-`prefers-reduced-transparency: reduce`：面板背景 `#10261C`，无 blur。
+`prefers-reduced-transparency: reduce`：面板背景降为乙的 `#1C1C1E`（丙为 `#000000`），无 blur。
 
 ## 9. 图标
 
-16px SVG，`fill="none"` 描边 `currentColor` 1.75，`stroke-linecap: round`。按钮 `aria-label` 中文，svg `aria-hidden="true"`。
+lucide 16px，描边 1.75，`stroke-linecap: round`。默认 `muted`，激活/焦点 `text`，footer `dim`。按钮 `aria-label` 中文，svg `aria-hidden="true"`。无强调色。
 
-必备：后退、前进、刷新、关闭、地球（前往）、四角框（场景/当前）、闪电（命令）、警告、spinner。
+必备：后退、前进、刷新、关闭、地球（前往）、四角框（场景/当前）、闪电（命令）、`alert-triangle`（错误）、spinner。
 
-品牌：工作面 header 引用随包 `foscen-icon.svg` 24px。地址条不放 wordmark。CSP `img-src 'self'`。
+品牌：覆盖层用 [brand-neutral.svg](brand-neutral.svg) 24px；随包 `assets/brand/foscen-icon.svg` 等用户拍板再换。地址条不放 wordmark。CSP `img-src 'self'`。
 
 ## 10. 拖动
 

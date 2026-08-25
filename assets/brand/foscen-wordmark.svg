@@ -1,13 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 160" role="img" aria-labelledby="title description">
   <title id="title">Foscen wordmark</title>
-  <desc id="description">The Foscen focus-frame symbol followed by the Foscen name.</desc>
-  <g fill="none" stroke="#6E6E73" stroke-width="14" stroke-linecap="round">
-    <path d="M28 70V40a12 12 0 0 1 12-12h30" />
-    <path d="M90 28h30a12 12 0 0 1 12 12v30" />
-    <path d="M132 90v30a12 12 0 0 1-12 12H90" />
-    <path d="M70 132H40a12 12 0 0 1-12-12V90" />
-  </g>
-  <rect x="55" y="55" width="50" height="50" rx="14" fill="#1C1C1E" />
-  <path d="M70 96V65h31v9H79v5h18v8H79v9h-9Z" fill="#F5F5F7" />
+  <desc id="description">The Foscen scene-and-focus symbol followed by the Foscen name.</desc>
+  <path fill-rule="evenodd" d="M54 28H106A26 26 0 0 1 132 54V106A26 26 0 0 1 106 132H54A26 26 0 0 1 28 106V54A26 26 0 0 1 54 28ZM72 62H88A10 10 0 0 1 98 72V88A10 10 0 0 1 88 98H72A10 10 0 0 1 62 88V72A10 10 0 0 1 72 62Z" fill="#1C1C1E" />
   <text x="166" y="108" fill="#1C1C1E" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="76" font-weight="680" letter-spacing="-3">Foscen</text>
 </svg>

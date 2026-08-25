@@ -1,30 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
   <title id="title">Foscen app icon</title>
-  <desc id="description">A focused scene framed by four light corners on a charcoal field.</desc>
-  <defs>
-    <linearGradient id="field" x1="128" y1="96" x2="896" y2="928" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#24242A" />
-      <stop offset="0.56" stop-color="#16161A" />
-      <stop offset="1" stop-color="#0A0A0B" />
-    </linearGradient>
-    <linearGradient id="scene" x1="340" y1="284" x2="710" y2="758" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFFFFF" />
-      <stop offset="0.5" stop-color="#D1D1D6" />
-      <stop offset="1" stop-color="#A1A1A6" />
-    </linearGradient>
-    <filter id="shadow" x="0" y="0" width="1024" height="1024" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="34" stdDeviation="38" flood-color="#000000" flood-opacity="0.42" />
-    </filter>
-  </defs>
-
-  <rect x="56" y="56" width="912" height="912" rx="218" fill="url(#field)" />
-  <path d="M228 382V270a42 42 0 0 1 42-42h112" fill="none" stroke="#F5F5F7" stroke-width="54" stroke-linecap="round" />
-  <path d="M642 228h112a42 42 0 0 1 42 42v112" fill="none" stroke="#F5F5F7" stroke-width="54" stroke-linecap="round" />
-  <path d="M796 642v112a42 42 0 0 1-42 42H642" fill="none" stroke="#F5F5F7" stroke-width="54" stroke-linecap="round" />
-  <path d="M382 796H270a42 42 0 0 1-42-42V642" fill="none" stroke="#F5F5F7" stroke-width="54" stroke-linecap="round" />
-
-  <g filter="url(#shadow)">
-    <rect x="326" y="326" width="372" height="372" rx="102" fill="url(#scene)" />
-    <path d="M424 609V415h193v52H481v31h114v50H481v61h-57Z" fill="#16161A" />
-  </g>
+  <desc id="description">A scene square with a focus void at its centre, on a charcoal plate.</desc>
+  <rect x="56" y="56" width="912" height="912" rx="218" fill="#16161A" />
+  <path fill-rule="evenodd" d="M387 272H637A115 115 0 0 1 752 387V637A115 115 0 0 1 637 752H387A115 115 0 0 1 272 637V387A115 115 0 0 1 387 272ZM476 432H548A44 44 0 0 1 592 476V548A44 44 0 0 1 548 592H476A44 44 0 0 1 432 548V476A44 44 0 0 1 476 432Z" fill="#F5F5F7" />
 </svg>

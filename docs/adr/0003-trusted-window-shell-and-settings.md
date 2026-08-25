@@ -65,7 +65,7 @@ BaseWindow
 
 ### 品牌身份合同
 
-- 可信控制面、内置落地页和关于页使用随包的 `foscen-icon.svg` 或 `foscen-wordmark.svg`，不再使用文字 `F` 作为品牌占位。
+- 可信控制面、内置落地页和关于页使用随包的 `foscen-mark.svg`（应用内脱板字形）或 `foscen-wordmark.svg`，不再使用文字 `F` 作为品牌占位。`foscen-icon.svg` 是带底板的应用图标源，只用于生成 `foscen.icns`，不在界面里缩放。
 - 打包应用继续以 `Foscen`、`com.conteman.foscen` 和 `foscen.icns` 为唯一系统身份。
 - `pnpm start` 运行 Electron 开发宿主，只用于开发验证；Dock、Finder、菜单栏、窗口切换器和活动监视器的品牌验收必须针对打包后的 `Foscen.app`。
 - 品牌资源只从随包本地路径加载，不引入远程图片、外部脚本或宽松 CSP。

@@ -1,6 +1,6 @@
 # Foscen ⌘L 覆盖层设计规范
 
-状态：信息架构已采纳（轻量地址条 + 命令面板 + 工作面，同一 control View）。本文是画稿与实现的**唯一数值事实源**。视觉还剩甲 / 乙 / 丙三套风格供用户挑选。
+状态：信息架构已采纳（轻量地址条 + 命令面板 + 工作面，同一 control View）。本文是画稿与实现的**唯一数值事实源**。视觉风格 2026-08-25 已选定 **乙 · 实色**；甲与丙仅存档，实现不要再读它们的数值。
 
 阶段二才改 `src/`。不要把关键数值只写在原型 CSS 里。
 
@@ -209,7 +209,7 @@ Tab 在 header 关闭、tablist、内容控件间循环。tablist 左右箭头�
 
 错误不靠颜色：输入边框升到 `rgb(255 255 255 / 32%)`；行左 `lucide: alert-triangle`、`fill: #F5F5F7`；文案用 `text` 而非 `muted`。
 
-### 甲 · 玻璃
+### 甲 · 玻璃（未采用，存档）
 
 半透明中性面板，blur 出网页层次。最吃 GPU，底层网页颜色会渗进来。
 
@@ -231,7 +231,7 @@ Tab 在 header 关闭、tablist、内容控件间循环。tablist 左右箭头�
 | primary-ink                    | `#131315`                             |
 | `prefers-reduced-transparency` | `#1C1C1E`，blur none                  |
 
-### 乙 · 实色（推荐默认）
+### 乙 · 实色（已选定，2026-08-25）
 
 完全不透明。无 blur。边界靠 1px 描边 + 阴影。浅色、深色、视频网页上都稳。`prefers-reduced-transparency` 无需分支。
 
@@ -252,7 +252,7 @@ Tab 在 header 关闭、tablist、内容控件间循环。tablist 左右箭头�
 | primary-fill  | `#F5F5F7`                             |
 | primary-ink   | `#1C1C1E`                             |
 
-### 丙 · 硬边纯黑
+### 丙 · 硬边纯黑（未采用，存档）
 
 对比度最高。无 blur、无 inset 高光。原「纸感」在黑白灰里与玻璃分不清，故替换。
 
@@ -273,9 +273,9 @@ Tab 在 header 关闭、tablist、内容控件间循环。tablist 左右箭头�
 | primary-fill  | `#FFFFFF`                          |
 | primary-ink   | `#000000`                          |
 
-### 推荐：乙 · 实色
+### 选定结果：乙 · 实色
 
-覆盖层压在任意 HTTPS 网页上。玻璃会吸入底层颜色；纯黑对比最强但切边更硬。乙与不透明窗口外框一致，无 blur 分支。
+覆盖层压在任意 HTTPS 网页上。玻璃会吸入底层颜色；纯黑对比最强但切边更硬。乙与不透明窗口外框一致，无 blur 分支。用户于 2026-08-25 拍板采用乙。
 
 ---
 
@@ -312,5 +312,5 @@ Tab 在 header 关闭、tablist、内容控件间循环。tablist 左右箭头�
 3. 地址条 combobox。
 4. palette 同壳。
 5. surface 尺寸与 tab。
-6. 接入选定风格 token（默认乙）。
+6. 接入乙的 token（`tokens.json` → `styles.yi`，`shippingStyle: "yi"`）。
 7. README / architecture / CHANGELOG。

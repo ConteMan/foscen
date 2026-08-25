@@ -184,7 +184,7 @@ function buildRows(query, currentUrl, scenes):
 
 `prefers-reduced-motion: reduce`：enter/exit 无位移，height 瞬时，spinner 换成静态「加载中」。
 
-`prefers-reduced-transparency: reduce`：面板背景降为乙的 `#1C1C1E`（丙为 `#000000`），无 blur。
+`prefers-reduced-transparency: reduce`：乙本就是不透明实色，无需降级分支——这正是选它的理由之一。
 
 ## 9. 图标
 
@@ -192,7 +192,7 @@ lucide 16px，描边 1.75，`stroke-linecap: round`。默认 `muted`，激活/�
 
 必备：后退、前进、刷新、关闭、地球（前往）、四角框（场景/当前）、闪电（命令）、`alert-triangle`（错误）、spinner。
 
-品牌：覆盖层用 [brand-neutral.svg](brand-neutral.svg) 24px；随包 `assets/brand/foscen-icon.svg` 等用户拍板再换。地址条不放 wordmark。CSP `img-src 'self'`。
+品牌：覆盖层用随包 `assets/brand/foscen-icon.svg` 24px（2026-08-25 已换为中性版，与 [brand-neutral.svg](brand-neutral.svg) 同一份）。地址条不放 wordmark。CSP `img-src 'self'`。
 
 ## 10. 拖动
 

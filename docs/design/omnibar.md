@@ -297,9 +297,11 @@ Tab 在 header 关闭、tablist、内容控件间循环。tablist 左右箭头�
 
 ## 8. 品牌标
 
-覆盖层用 [brand-neutral.svg](brand-neutral.svg)。随包绿标不在本阶段替换。实测见 [brand.md](brand.md)。
+**覆盖层与工作面都不放品牌标。** 地址条、命令面板、工作面标题、空态一律没有——容器应该消失，不该自我宣传。
 
-地址条不放 wordmark。工作面 header：24px 中性标 + 标题。关于：24px 标 + 名称 + 版本。空态：可选 48px 四角框。禁止字母 F 的 CSS 方块。
+应用内唯一放标的地方是关于页：48px `assets/brand/foscen-mark.svg`（脱板、纯中性）+ 名称 + 版本。
+
+品牌红 `#D05954` 不得进入覆盖层，它只属于 Dock 图标与 wordmark。禁止字母 F 的 CSS 方块。标志定稿与实测见 [brand.md](brand.md)。
 
 废止的绿版（2026-08-25 前）hex 见 `tokens.json` 的 `deprecatedColor`。
 

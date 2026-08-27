@@ -18,14 +18,15 @@
 | `line`        | `rgb(255 255 255 / 8%)`  | 分割             |
 | `line-strong` | `rgb(255 255 255 / 14%)` | 较强边           |
 
-品牌标 SVG（`docs/design/brand-neutral.svg`，不覆盖随包资产）：
+品牌资产（`assets/brand/`，**不属于覆盖层 token**）：
 
-| token     | 值        |
-| --------- | --------- |
-| `field-0` | `#0A0A0B` |
-| `field-1` | `#16161A` |
-| `field-2` | `#24242A` |
-| `mark`    | `#F5F5F7` |
+| token          | 值        | 用途                          |
+| -------------- | --------- | ----------------------------- |
+| `brand-accent` | `#D05954` | Dock 图标底、wordmark、关于页 |
+| `mark`         | `#F5F5F7` | 标本身                        |
+| `field-1`      | `#16161A` | 深色场、字标文字              |
+
+`brand-accent` 是这套 token 里唯一的彩色，**只允许出现在品牌资产上**。覆盖层、工作面、地址条、命令面板一律禁用，见 `tokens.json` 的 `brandAccent.forbidden`。
 
 焦点环（三变体共用）：`2px solid rgb(255 255 255 / 70%)`，offset `2px`。
 

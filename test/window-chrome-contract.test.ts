@@ -47,6 +47,29 @@ test('macOS 交通灯在窗口首次显示前默认隐藏', async () => {
   assert.ok(hideButtonsIndex < showWindowIndex)
 })
 
+test('控制面 View 使用 12px 圆角，与风格乙面板一致', async () => {
+  const [main, layout, css] = await Promise.all([
+    readFile('src/main/index.ts', 'utf8'),
+    readFile('src/main/window-layout.ts', 'utf8'),
+    readFile('src/renderer/styles.css', 'utf8'),
+  ])
+
+  assert.match(layout, /CONTROL_CORNER_RADIUS = 12/)
+  assert.match(main, /chromeView\.setBorderRadius\(CONTROL_CORNER_RADIUS\)/)
+  assert.match(main, /chromeView\.setBackgroundColor\(CONTROL_PANEL_COLOR\)/)
+  assert.match(css, /--radius:\s*12px/)
+})
+
+test('地址输入焦点环画在圆角输入壳上，而不是内层矩形 input', async () => {
+  const css = await readFile('src/renderer/styles.css', 'utf8')
+
+  assert.match(css, /\.field:focus-within\s*{[\s\S]*?outline:\s*2px solid var\(--focus\)/)
+  assert.match(css, /\.field:focus-within\s*{[\s\S]*?outline-offset:\s*2px/)
+  assert.match(css, /\.field input:focus-visible\s*{[\s\S]*?outline:\s*none/)
+  assert.match(css, /\.omnibar\s*{[\s\S]*?grid-template-areas:/)
+  assert.match(css, /\.omnibar\s*{[\s\S]*?padding-bottom:\s*8px/)
+})
+
 test('控制面顶部有 10px 拖动条，button/input 保持 no-drag', async () => {
   const [html, css] = await Promise.all([
     readFile('src/renderer/index.html', 'utf8'),

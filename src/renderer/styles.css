@@ -59,11 +59,44 @@ input {
   background: var(--panel);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  box-shadow: var(--shadow), var(--inset);
+  box-shadow: var(--inset);
 }
 
 .omnibar {
+  align-content: start;
+  grid-template-areas:
+    'drag'
+    'input'
+    'live'
+    'list'
+    'empty'
+    'foot';
   grid-template-rows: 10px 44px auto minmax(0, 1fr) auto 28px;
+  padding-bottom: 8px;
+}
+
+.omnibar .drag-strip {
+  grid-area: drag;
+}
+
+.omnibar .input-row {
+  grid-area: input;
+}
+
+.omnibar .live {
+  grid-area: live;
+}
+
+.omnibar .list {
+  grid-area: list;
+}
+
+.omnibar .empty {
+  grid-area: empty;
+}
+
+.omnibar .foot {
+  grid-area: foot;
 }
 
 .surface {
@@ -84,7 +117,7 @@ input {
   gap: 6px;
   align-items: center;
   min-height: 44px;
-  padding: 0 8px 8px;
+  padding: 0 8px;
 }
 
 .omnibar.is-palette .nav {
@@ -147,6 +180,11 @@ input {
   border-color: var(--error-border);
 }
 
+.field:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
 .field input {
   width: 100%;
   min-width: 0;
@@ -158,6 +196,11 @@ input {
   line-height: 20px;
   background: transparent;
   border: 0;
+  outline: none;
+}
+
+.field input:focus,
+.field input:focus-visible {
   outline: none;
 }
 
@@ -288,7 +331,7 @@ kbd {
   gap: 14px;
   align-items: center;
   min-height: 28px;
-  padding: 0 14px 8px;
+  padding: 0 14px;
   color: var(--dim);
   font-size: 11px;
   line-height: 16px;
@@ -596,7 +639,7 @@ h2 {
 }
 
 button:focus-visible,
-input:focus-visible,
+.inline-form input:focus-visible,
 [role='tabpanel']:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;

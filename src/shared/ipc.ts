@@ -1,10 +1,11 @@
 import type { PermissionDecision, PermissionLifetime, SupportedPermission } from './permissions.js'
-import type { ChromeState } from './ui-state.js'
+import type { ChromeState, ControlPresentation } from './ui-state.js'
 
 export const IPC_CHANNELS = {
   dismissChrome: 'chrome:dismiss',
   rendererReady: 'chrome:renderer-ready',
   showChrome: 'chrome:show',
+  requestControlSize: 'chrome:request-size',
   navigate: 'scene:navigate',
   goBack: 'scene:go-back',
   goForward: 'scene:go-forward',
@@ -25,9 +26,15 @@ export type NavigateResult = { ok: true; url: string } | { ok: false; error: str
 
 export type ActionResult = { ok: true; message: string } | { ok: false; error: string }
 
+export interface ControlSizeRequest {
+  readonly presentation: ControlPresentation
+  readonly rowCount: number
+}
+
 export interface FoscenBridge {
   dismissChrome: () => Promise<void>
   rendererReady: () => Promise<void>
+  requestControlSize: (request: ControlSizeRequest) => Promise<void>
   navigate: (target: string) => Promise<NavigateResult>
   goBack: () => Promise<void>
   goForward: () => Promise<void>

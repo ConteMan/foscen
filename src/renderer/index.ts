@@ -9,6 +9,7 @@ import type {
 import type { Scene } from '../shared/scenes.js'
 import type { ChromeState, ControlPresentation, FocusMode } from '../shared/ui-state.js'
 import { presentationForFocusMode } from '../shared/ui-state.js'
+import { buildOmnibarSuggestions, tryNormalize, type OmnibarSuggestion } from './omnibar-suggest.js'
 
 const SURFACE_PANELS = ['scenes', 'downloads', 'permissions', 'update'] as const
 type SurfacePanel = (typeof SURFACE_PANELS)[number]
@@ -54,10 +55,7 @@ const COMMANDS = [
 type CommandId = (typeof COMMANDS)[number]['id']
 
 type Suggestion =
-  | { kind: 'go'; title: string; subtitle: string; href: string }
-  | { kind: 'current'; title: string; subtitle: string }
-  | { kind: 'scene'; title: string; subtitle: string; id: string }
-  | { kind: 'command'; title: string; subtitle: string; id: CommandId }
+  OmnibarSuggestion | { kind: 'command'; title: string; subtitle: string; id: CommandId }
 
 const ICON_PATHS: Record<string, string> = {
   'arrow-left': 'M19 12H5M12 19l-7-7 7-7',
@@ -93,35 +91,6 @@ function lucide(name: keyof typeof ICON_PATHS): SVGSVGElement {
   path.setAttribute('d', d)
   svg.append(path)
   return svg
-}
-
-function tryNormalize(
-  raw: string,
-): { ok: true; href: string } | { ok: false; reason: 'empty' | 'https' | 'invalid' } {
-  const trimmed = raw.trim()
-  if (trimmed.length === 0 || trimmed.length > 2048) {
-    return { ok: false, reason: 'empty' }
-  }
-  const withProtocol = /^[a-z][a-z\d+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`
-  let parsed: URL
-  try {
-    parsed = new URL(withProtocol)
-  } catch {
-    return { ok: false, reason: 'invalid' }
-  }
-  if (parsed.protocol !== 'https:' || parsed.username || parsed.password || !parsed.hostname) {
-    return { ok: false, reason: 'https' }
-  }
-  return { ok: true, href: parsed.href }
-}
-
-function isIdleQuery(query: string, currentUrl: string): boolean {
-  const trimmed = query.trim()
-  if (!trimmed) {
-    return true
-  }
-  const parsed = tryNormalize(trimmed)
-  return parsed.ok && parsed.href === currentUrl
 }
 
 function maxVisibleRows(): number {
@@ -169,6 +138,7 @@ const tabButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[dat
 const panels = Array.from(document.querySelectorAll<HTMLElement>('[data-panel]'))
 
 let latestState: ChromeState | undefined
+let lastOpenGeneration = -1
 let lastFocusedMode: FocusMode | undefined
 let localMode: FocusMode = 'navigate'
 let suggestions: Suggestion[] = []
@@ -249,38 +219,6 @@ function showPresentation(mode: FocusMode): void {
   omnibarLabel.textContent = mode === 'command' ? '搜索命令' : 'HTTPS 地址或场景'
   omnibarInput.placeholder = mode === 'command' ? '搜索命令' : '输入 HTTPS 地址或搜索场景'
   nav.hidden = mode === 'command'
-}
-
-function buildOmnibarSuggestions(query: string, state: ChromeState): Suggestion[] {
-  const parsed = tryNormalize(query)
-  if (parsed.ok === false && parsed.reason === 'https' && query.trim()) {
-    return []
-  }
-  const rows: Suggestion[] = []
-  const idle = isIdleQuery(query, state.currentUrl)
-  const limit = maxVisibleRows()
-  if (!idle && parsed.ok && parsed.href !== state.currentUrl) {
-    rows.push({ kind: 'go', title: '前往', subtitle: parsed.href, href: parsed.href })
-  }
-  if (idle || state.currentUrl.toLowerCase().includes(query.trim().toLowerCase())) {
-    rows.push({ kind: 'current', title: '当前场景', subtitle: state.currentUrl || '' })
-  }
-  const needle = query.trim().toLowerCase()
-  const scenes = [...state.scenes].sort((left, right) =>
-    right.updatedAt.localeCompare(left.updatedAt),
-  )
-  for (const scene of scenes) {
-    if (scene.url === state.currentUrl) {
-      continue
-    }
-    if (idle || `${scene.name} ${scene.url}`.toLowerCase().includes(needle)) {
-      rows.push({ kind: 'scene', title: scene.name, subtitle: scene.url, id: scene.id })
-    }
-    if (rows.length >= limit) {
-      break
-    }
-  }
-  return rows.slice(0, limit)
 }
 
 function buildCommandSuggestions(query: string): Suggestion[] {
@@ -403,7 +341,7 @@ function refreshOmnibar(state: ChromeState): void {
       setLive('仅支持 HTTPS 网页地址', true)
       empty.textContent = ''
     } else {
-      suggestions = buildOmnibarSuggestions(query, state)
+      suggestions = buildOmnibarSuggestions(query, state, maxVisibleRows())
       empty.textContent = '没有匹配的场景。补全 HTTPS 地址后回车。'
       if (
         query.trim() &&
@@ -626,12 +564,15 @@ function renderState(state: ChromeState): void {
   renderPermissionPrompt(state)
   renderPermissionRecords(state.permissionRecords)
   renderUpdate(state)
-  const shouldFocus =
-    lastFocusedMode !== state.focusMode || document.activeElement === document.body
+  const generationChanged = state.openGeneration !== lastOpenGeneration
+  lastOpenGeneration = state.openGeneration
+  const modeChanged = lastFocusedMode !== state.focusMode
   lastFocusedMode = state.focusMode
   localMode = state.focusMode
   showPresentation(state.focusMode)
-  if (document.activeElement !== omnibarInput) {
+  const shouldResetInput =
+    generationChanged || modeChanged || document.activeElement !== omnibarInput
+  if (shouldResetInput) {
     omnibarInput.value = state.focusMode === 'command' ? '' : state.currentUrl
   }
   if (presentationForFocusMode(state.focusMode) === 'omnibar') {
@@ -640,6 +581,7 @@ function renderState(state: ChromeState): void {
     switchSurfacePanel(state.focusMode)
     scheduleControlSize('surface', 0)
   }
+  const shouldFocus = generationChanged || modeChanged || document.activeElement === document.body
   if (shouldFocus) {
     window.requestAnimationFrame(() => applyFocus(state.focusMode))
   }
@@ -656,9 +598,11 @@ async function activate(): Promise<void> {
     }
     const parsed = tryNormalize(omnibarInput.value)
     if (!parsed.ok) {
-      field.classList.add('is-invalid')
-      setLive(parsed.reason === 'https' ? '仅支持 HTTPS 网页地址' : '地址格式无效', true)
-      scheduleControlSize('omnibar', 1)
+      if (parsed.reason === 'https' || parsed.reason === 'invalid') {
+        field.classList.add('is-invalid')
+        setLive(parsed.reason === 'https' ? '仅支持 HTTPS 网页地址' : '地址格式无效', true)
+        scheduleControlSize('omnibar', 1)
+      }
       return
     }
     overlayBusy = 'navigate'

@@ -90,6 +90,14 @@ test('CSP 保持收紧且整份文档没有网络地址引用', async () => {
   assert.doesNotMatch(html, /https?:\/\//i)
 })
 
+test('建议行数上限按窗口宽度取 6 或 4，不由控制面自身高度反推', async () => {
+  const renderer = await readFile('src/renderer/index.ts', 'utf8')
+
+  assert.match(renderer, /MAX_VISIBLE_ROWS_COMPACT/)
+  assert.match(renderer, /innerWidth < 520/)
+  assert.doesNotMatch(renderer, /innerHeight\s*-\s*90/)
+})
+
 test('打开面板的兜底定时器与状态推送必须保持引用，避免二次 ⌘L 不显示', async () => {
   const main = await readFile('src/main/index.ts', 'utf8')
 

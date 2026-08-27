@@ -8,7 +8,11 @@ import type {
 } from '../shared/permissions.js'
 import type { Scene } from '../shared/scenes.js'
 import type { ChromeState, ControlPresentation, FocusMode } from '../shared/ui-state.js'
-import { presentationForFocusMode } from '../shared/ui-state.js'
+import {
+  MAX_VISIBLE_ROWS,
+  MAX_VISIBLE_ROWS_COMPACT,
+  presentationForFocusMode,
+} from '../shared/ui-state.js'
 import { buildOmnibarSuggestions, tryNormalize, type OmnibarSuggestion } from './omnibar-suggest.js'
 
 const SURFACE_PANELS = ['scenes', 'downloads', 'permissions', 'update'] as const
@@ -94,8 +98,8 @@ function lucide(name: keyof typeof ICON_PATHS): SVGSVGElement {
 }
 
 function maxVisibleRows(): number {
-  const heightBudget = Math.floor((window.innerHeight - 90) / 40)
-  return Math.min(6, Math.max(0, heightBudget || 6))
+  // 控制面 View 的高度随行数变化，不能用 innerHeight 反推上限，否则从矮面板切到命令列表会卡在 1 行。
+  return window.innerWidth < 520 ? MAX_VISIBLE_ROWS_COMPACT : MAX_VISIBLE_ROWS
 }
 
 const omnibarRoot = requiredElement<HTMLElement>('[data-omnibar-root]')

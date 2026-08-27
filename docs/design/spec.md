@@ -192,7 +192,7 @@ lucide 16px，描边 1.75，`stroke-linecap: round`。默认 `muted`，激活/�
 
 必备：后退、前进、刷新、关闭、地球（前往）、四角框（场景/当前）、闪电（命令）、`alert-triangle`（错误）、spinner。
 
-品牌：应用内用随包 `assets/brand/foscen-mark.svg` 24px（脱板字形，2026-08-25 重做为「方中方」）。带板的 `foscen-icon.svg` 只给 Dock / Finder，不要在界面里缩放它。地址条不放 wordmark。CSP `img-src 'self'`。详见 [brand.md](brand.md)。
+品牌：**覆盖层与工作面都不放品牌标**——地址条、命令面板、工作面标题、空态一律没有。应用内唯一放标的地方是关于页，用 `assets/brand/foscen-mark.svg` 48px（脱板、纯中性）。带板的 `foscen-icon.svg` 只给 Dock / Finder。品牌红 `#D05954` 不得进入覆盖层。CSP `img-src 'self'`。详见 [brand.md](brand.md)。
 
 ## 10. 拖动
 

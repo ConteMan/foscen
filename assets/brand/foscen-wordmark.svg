@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 160" role="img" aria-labelledby="title description">
   <title id="title">Foscen wordmark</title>
-  <desc id="description">The Foscen scene-and-focus symbol followed by the Foscen name.</desc>
-  <path fill-rule="evenodd" d="M54 28H106A26 26 0 0 1 132 54V106A26 26 0 0 1 106 132H54A26 26 0 0 1 28 106V54A26 26 0 0 1 54 28ZM72 62H88A10 10 0 0 1 98 72V88A10 10 0 0 1 88 98H72A10 10 0 0 1 62 88V72A10 10 0 0 1 72 62Z" fill="#1C1C1E" />
+  <desc id="description">The Foscen aperture mark followed by the Foscen name.</desc>
+  <path fill-rule="evenodd" d="M82.5 126.5Q73.0 132.0 63.5 126.5L37.4 111.5Q28.0 106.0 28.0 95.1L28.0 64.9Q28.0 54.0 37.4 48.5L63.5 33.5Q73.0 28.0 82.5 33.5L108.6 48.5Q118.0 54.0 118.0 64.9L118.0 95.1Q118.0 106.0 108.6 111.5ZM69.5 64.5Q73.0 58.5 76.5 64.5L90.2 88.3Q93.7 94.4 86.8 94.4L59.2 94.4Q52.3 94.4 55.8 88.3Z" fill="#D05954" />
   <text x="166" y="108" fill="#1C1C1E" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="76" font-weight="680" letter-spacing="-3">Foscen</text>
 </svg>

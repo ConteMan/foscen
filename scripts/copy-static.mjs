@@ -2,6 +2,7 @@ import { cp, mkdir } from 'node:fs/promises'
 
 const sourceRoot = new URL('../src/', import.meta.url)
 const outputRoot = new URL('../dist/', import.meta.url)
+const brandMark = new URL('../assets/brand/foscen-mark.svg', import.meta.url)
 
 for (const directory of ['renderer', 'scene', 'window-chrome']) {
   await mkdir(new URL(`${directory}/`, outputRoot), { recursive: true })
@@ -14,4 +15,6 @@ for (const directory of ['renderer', 'scene', 'window-chrome']) {
   }
 }
 
-console.log('Copied renderer, scene, and window chrome static assets.')
+await cp(brandMark, new URL('renderer/foscen-mark.svg', outputRoot))
+
+console.log('Copied renderer, scene, window chrome static assets, and brand mark.')

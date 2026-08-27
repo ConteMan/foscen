@@ -69,7 +69,8 @@ GNOME 的图标指南要求轮廓自身要独特，并明确警告不要「把�
 
 ## 待办
 
-- **macOS 26 Tahoe 未实机验证。** 分层源已备在 `assets/brand/tahoe/`，需要在 Tahoe 机器上用 Icon Composer 合成 `.icon` 并确认观感，详见 [brand-research.md](brand-research.md)。
+- **macOS 26 Tahoe 未实机验证。** 分层源已备在 `assets/brand/tahoe/`。合成 `.icon` 需要 `actool`（随完整 Xcode 提供），本机只有 Command Line Tools，做不了；也没有 Tahoe 机器可验。详见 [brand-research.md](brand-research.md)。
+- 已用本机工具修掉两个 `.icns` 缺陷：画布比例从 89% 收到 80.5%（对齐实测的系统图标），以及 `qlmanage` 铺白底导致的不透明背景（改用随包 Electron 光栅化）。自查方法见 [assets/brand/README.md](../../assets/brand/README.md)。
 - 逐档 pixel-fit（16 / 24 / 32 单独画而非缩放）尚未做。目前是一份 SVG 缩放，实测可用但不是最优。
 
 ## 废止记录

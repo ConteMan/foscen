@@ -38,11 +38,32 @@
 - 应用内不使用品牌红，用 `foscen-mark.svg` 的纯中性版。
 - 不要拉伸、旋转、改变三角与六边形的比例，或在复杂背景上移除必要留白。
 
+## 画布比例（实测对齐）
+
+`foscen-icon.svg` 的圆角本体是 **824/1024 = 80.5%**，居中，圆角 185。
+
+这个数字是量出来的，不是估的：把本机 Notes / Terminal / Maps / Reminders 的 `.icns` 渲成 1024 后测不透明包围盒，系统应用是 854px（83.4%，含阴影扩散），第三方的 Pen.app 是 832px（81.2%）。我们生成的 `.icns` 实测 826px（80.7%），落在同一区间。
+
+早先是 912/1024 = 89%，比 Dock 里的邻居明显大一圈。**改这个比例前先重新量一遍，不要凭感觉调。**
+
+## 透明底（不要用 qlmanage）
+
+`.icns` 必须四角透明。`qlmanage -t` 会给 SVG 铺一层不透明白底，用它生成的图标在 Dock 里是「白方块上贴个图标」——这个缺陷存在过，已修。
+
+本机没有 rsvg-convert / cairosvg / Inkscape，`generate-icon.sh` 改用随包 Electron 光栅化（`scripts/render-svg.mjs`），这是唯一能保留 alpha 的可用渲染器。改动图标后用下面这条自查：
+
+```
+sips -s format png -Z 1024 assets/brand/foscen.icns --out /tmp/i.png
+python3 -c "from PIL import Image; im=Image.open('/tmp/i.png').convert('RGBA'); print(im.getpixel((2,2)))"
+```
+
+四角必须是 `(0, 0, 0, 0)`。
+
 ## macOS 26 Tahoe
 
-Tahoe 由系统施加 squircle 遮罩、阴影与 Liquid Glass，设计者提供的是**满幅方形图层**，不能自绘圆角底板。`tahoe/background.svg`（纯品牌红满幅）与 `tahoe/foreground.svg`（浅色标）就是这两层，用 Apple 的 Icon Composer 合成 `.icon` 包。
+Tahoe 由系统施加 squircle 遮罩、阴影与 Liquid Glass，设计者提供的是**满幅方形图层**，不能自绘圆角底板。`tahoe/background.svg`（纯品牌红满幅）与 `tahoe/foreground.svg`（浅色标）就是这两层。
 
-Icon Composer 是 GUI 工具，这一步无法脚本化。**尚未在 Tahoe 实机验证**，详见 [brand-research.md](../../docs/design/brand-research.md)。当前 `foscen-icon.svg` 自绘圆角底板，是给旧版 macOS 的 `.icns` 用的。
+合成 `.icon` 需要 `actool`，它随完整 Xcode 提供；本机只有 Command Line Tools，所以这一步现在做不了。**也尚未在 Tahoe 实机验证**，详见 [brand-research.md](../../docs/design/brand-research.md)。当前随包的仍是 `.icns`，走上面的 Electron 光栅化路径。
 
 ## 接入合同
 

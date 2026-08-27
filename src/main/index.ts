@@ -43,6 +43,8 @@ import {
   normalizeSceneUrl,
 } from './url-policy.js'
 import {
+  CONTROL_CORNER_RADIUS,
+  CONTROL_PANEL_COLOR,
   DEFAULT_WINDOW_PRESENTATION_MODE,
   calculateWindowViewLayout,
   clampRowCount,
@@ -241,6 +243,8 @@ class FoscenWindow {
     this.window.contentView.addChildView(this.sceneView)
     this.window.contentView.addChildView(this.chromeView)
     this.windowChromeView.setBackgroundColor(windowFrameColor())
+    this.chromeView.setBackgroundColor(CONTROL_PANEL_COLOR)
+    this.chromeView.setBorderRadius(CONTROL_CORNER_RADIUS)
     this.chromeView.setVisible(false)
 
     this.downloadManager = new DownloadManager({
@@ -633,6 +637,7 @@ class FoscenWindow {
     this.sceneView.setBounds(layout.scene)
     this.sceneView.setBorderRadius(layout.sceneBorderRadius)
     this.chromeView.setBounds(layout.control)
+    this.chromeView.setBorderRadius(CONTROL_CORNER_RADIUS)
   }
 
   private installNavigationGuards(): void {

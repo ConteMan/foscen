@@ -9,6 +9,9 @@ export type WindowPresentationMode = 'frame' | 'minimal'
 export const DEFAULT_WINDOW_PRESENTATION_MODE: WindowPresentationMode = 'frame'
 export const WINDOW_FRAME_INSET = 10
 export const WINDOW_SCENE_CORNER_RADIUS = 8
+/** 风格乙面板圆角。必须打在 WebContentsView 上，仅 CSS 无法裁切原生 View。 */
+export const CONTROL_CORNER_RADIUS = 12
+export const CONTROL_PANEL_COLOR = '#1C1C1E'
 
 const COMPACT_WIDTH_BREAKPOINT = 520
 const COMPACT_HEIGHT_BREAKPOINT = 400

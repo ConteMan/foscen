@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   DEFAULT_WINDOW_PRESENTATION_MODE,
+  CONTROL_CORNER_RADIUS,
   WINDOW_FRAME_INSET,
   WINDOW_SCENE_CORNER_RADIUS,
   calculateControlBounds,
@@ -20,6 +21,7 @@ test('默认边框模式将 scene 四边等距内缩且窗口外框位于完整�
   assert.deepEqual(layout.windowChrome, { x: 0, y: 0, width: 1280, height: 800 })
   assert.deepEqual(layout.scene, { x: 10, y: 10, width: 1260, height: 780 })
   assert.equal(layout.sceneBorderRadius, WINDOW_SCENE_CORNER_RADIUS)
+  assert.equal(CONTROL_CORNER_RADIUS, 12)
 })
 
 test('极简模式铺满 scene 并彻底隐藏常驻窗口外框', () => {

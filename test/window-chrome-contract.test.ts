@@ -47,15 +47,60 @@ test('macOS 交通灯在窗口首次显示前默认隐藏', async () => {
   assert.ok(hideButtonsIndex < showWindowIndex)
 })
 
-test('控制面顶部可拖动且所有按钮与输入保持 no-drag', async () => {
+test('控制面顶部有 10px 拖动条，button/input 保持 no-drag', async () => {
   const [html, css] = await Promise.all([
     readFile('src/renderer/index.html', 'utf8'),
     readFile('src/renderer/styles.css', 'utf8'),
   ])
 
-  assert.match(html, /<header class="panel-header">/)
-  assert.match(css, /\.panel-header\s*{[\s\S]*?-webkit-app-region:\s*drag/)
-  assert.match(css, /\.panel-header\s*{[\s\S]*?app-region:\s*drag/)
+  assert.match(html, /class="drag-strip"/)
+  assert.match(css, /\.drag-strip\s*{[\s\S]*?height:\s*10px/)
+  assert.match(css, /\.drag-strip\s*{[\s\S]*?-webkit-app-region:\s*drag/)
+  assert.match(css, /\.drag-strip\s*{[\s\S]*?app-region:\s*drag/)
   assert.match(css, /button,\s*\ninput\s*{[\s\S]*?-webkit-app-region:\s*no-drag/)
   assert.match(css, /button,\s*\ninput\s*{[\s\S]*?app-region:\s*no-drag/)
+})
+
+test('覆盖层不放品牌标，foscen-mark.svg 只出现在关于页', async () => {
+  const html = await readFile('src/renderer/index.html', 'utf8')
+
+  const marks = html.match(/foscen-mark\.svg/g) ?? []
+  assert.equal(marks.length, 1, '品牌标只能出现一次')
+
+  const markIndex = html.indexOf('foscen-mark.svg')
+  const aboutIndex = html.indexOf('class="about"')
+  const omnibarIndex = html.indexOf('class="omnibar"')
+  const surfaceHeaderIndex = html.indexOf('class="surface-header"')
+
+  assert.ok(aboutIndex >= 0 && aboutIndex < markIndex, '品牌标必须在关于页区块内')
+  assert.ok(omnibarIndex >= 0, '地址条区域必须存在')
+  assert.ok(surfaceHeaderIndex >= 0, '工作面 header 必须存在')
+  assert.ok(
+    markIndex > surfaceHeaderIndex,
+    '品牌标不得出现在地址条或工作面 header，只能在其后的关于页内容里',
+  )
+})
+
+test('CSP 保持收紧且整份文档没有网络地址引用', async () => {
+  const html = await readFile('src/renderer/index.html', 'utf8')
+
+  assert.match(html, /default-src 'none'/)
+  assert.match(html, /img-src 'self'/)
+  assert.match(html, /connect-src 'none'/)
+  assert.doesNotMatch(html, /https?:\/\//i)
+})
+
+test('品牌红 #D05954 不得出现在 src/renderer 的任何文件里', async () => {
+  const rendererFiles = ['index.ts', 'global.d.ts', 'styles.css', 'index.html']
+  const contents = await Promise.all(
+    rendererFiles.map((name) => readFile(`src/renderer/${name}`, 'utf8')),
+  )
+
+  contents.forEach((content, index) => {
+    assert.doesNotMatch(
+      content,
+      /#D05954/i,
+      `${rendererFiles[index]} 不得包含品牌红（覆盖层无强调色）`,
+    )
+  })
 })

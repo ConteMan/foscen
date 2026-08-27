@@ -159,6 +159,7 @@ class FoscenWindow {
   private focusMode: FocusMode = 'navigate'
   private controlPresentation: ControlPresentation = presentationForFocusMode('navigate')
   private controlRowCount = 0
+  private chromeOpenGeneration = 0
   private revealTimer: NodeJS.Timeout | undefined
   private readonly rendererReady: Promise<void>
   private resolveRendererReady: (() => void) | undefined
@@ -389,6 +390,7 @@ class FoscenWindow {
     this.controlPresentation = presentationForFocusMode(mode)
     if (isFreshOpen) {
       this.controlRowCount = 0
+      this.chromeOpenGeneration += 1
     }
     this.chromeVisible = true
     this.layout()
@@ -398,13 +400,14 @@ class FoscenWindow {
       this.chromeView.setVisible(true)
     }
     this.chromeView.webContents.focus()
-    this.sendState()
+    this.flushChromeState()
   }
 
   hideChrome(): void {
     this.chromeVisible = false
     this.controlRowCount = 0
     this.clearRevealTimer()
+    this.clearStateSendImmediate()
     this.chromeView.setVisible(false)
     this.sceneView.webContents.focus()
   }
@@ -429,8 +432,7 @@ class FoscenWindow {
     const [width = 0, height = 0] = this.window.getContentSize()
     this.controlRowCount = clampRowCount(rowCount, maxVisibleRowsFor(width, height))
     this.layout()
-    if (this.revealTimer) {
-      // renderer 已经报回真实行数：布局已经是最终尺寸，现在显示不会跳变。
+    if (this.chromeVisible) {
       this.clearRevealTimer()
       this.chromeView.setVisible(true)
     }
@@ -442,13 +444,21 @@ class FoscenWindow {
       this.revealTimer = undefined
       this.chromeView.setVisible(true)
     }, REVEAL_FALLBACK_MS)
-    this.revealTimer.unref()
+    // 必须保持引用：unref 后 Electron 在无其它 libuv 活动时不会调度该定时器，
+    // Esc 后再按 ⌘L 会永远不显示。
   }
 
   private clearRevealTimer(): void {
     if (this.revealTimer) {
       clearTimeout(this.revealTimer)
       this.revealTimer = undefined
+    }
+  }
+
+  private clearStateSendImmediate(): void {
+    if (this.stateSendImmediate) {
+      clearImmediate(this.stateSendImmediate)
+      this.stateSendImmediate = undefined
     }
   }
 
@@ -599,10 +609,7 @@ class FoscenWindow {
         clearTimeout(this.currentUrlTimer)
         this.currentUrlTimer = undefined
       }
-      if (this.stateSendImmediate) {
-        clearImmediate(this.stateSendImmediate)
-        this.stateSendImmediate = undefined
-      }
+      this.clearStateSendImmediate()
       this.flushCurrentUrlPersistence()
       this.permissionController?.dispose()
       this.permissionController = undefined
@@ -810,24 +817,33 @@ class FoscenWindow {
 
     this.stateSendImmediate = setImmediate(() => {
       this.stateSendImmediate = undefined
-      if (!this.chromeVisible || this.chromeView.webContents.isDestroyed()) {
-        return
-      }
-      const history = this.sceneView.webContents.navigationHistory
-      const state: ChromeState = {
-        currentUrl: displayableSceneUrl(this.sceneView.webContents.getURL()),
-        canGoBack: history.canGoBack(),
-        canGoForward: history.canGoForward(),
-        scenes: this.scenes,
-        downloads: this.downloads,
-        permissionRecords: this.permissionRecords,
-        permissionPrompt: this.permissionPrompt,
-        update: this.update,
-        focusMode: this.focusMode,
-      }
-      this.chromeView.webContents.send(IPC_CHANNELS.showChrome, state)
+      this.emitChromeState()
     })
-    this.stateSendImmediate.unref()
+  }
+
+  private flushChromeState(): void {
+    this.clearStateSendImmediate()
+    this.emitChromeState()
+  }
+
+  private emitChromeState(): void {
+    if (!this.chromeVisible || this.chromeView.webContents.isDestroyed()) {
+      return
+    }
+    const history = this.sceneView.webContents.navigationHistory
+    const state: ChromeState = {
+      currentUrl: displayableSceneUrl(this.sceneView.webContents.getURL()),
+      canGoBack: history.canGoBack(),
+      canGoForward: history.canGoForward(),
+      scenes: this.scenes,
+      downloads: this.downloads,
+      permissionRecords: this.permissionRecords,
+      permissionPrompt: this.permissionPrompt,
+      update: this.update,
+      focusMode: this.focusMode,
+      openGeneration: this.chromeOpenGeneration,
+    }
+    this.chromeView.webContents.send(IPC_CHANNELS.showChrome, state)
   }
 
   private async waitForRendererReady(): Promise<void> {

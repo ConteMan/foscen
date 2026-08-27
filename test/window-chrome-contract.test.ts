@@ -90,6 +90,20 @@ test('CSP 保持收紧且整份文档没有网络地址引用', async () => {
   assert.doesNotMatch(html, /https?:\/\//i)
 })
 
+test('打开面板的兜底定时器与状态推送必须保持引用，避免二次 ⌘L 不显示', async () => {
+  const main = await readFile('src/main/index.ts', 'utf8')
+
+  assert.match(main, /private beginReveal\(/)
+  assert.match(main, /this\.chromeOpenGeneration \+= 1/)
+  assert.match(main, /hideChrome\(\): void \{[\s\S]*?clearStateSendImmediate\(\)/)
+  assert.match(
+    main,
+    /requestControlSize\([\s\S]*?if \(this\.chromeVisible\) \{[\s\S]*?setVisible\(true\)/,
+  )
+  assert.doesNotMatch(main, /this\.revealTimer\.unref\(\)/)
+  assert.doesNotMatch(main, /this\.stateSendImmediate\.unref\(\)/)
+})
+
 test('品牌红 #D05954 不得出现在 src/renderer 的任何文件里', async () => {
   const rendererFiles = ['index.ts', 'global.d.ts', 'styles.css', 'index.html']
   const contents = await Promise.all(

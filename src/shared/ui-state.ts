@@ -40,4 +40,6 @@ export interface ChromeState {
   readonly permissionPrompt: PermissionPrompt | null
   readonly update: UpdateSnapshot
   readonly focusMode: FocusMode
+  /** 每次从隐藏打开控制面时递增，renderer 用来区分「重新打开」和打开后的增量快照。 */
+  readonly openGeneration: number
 }

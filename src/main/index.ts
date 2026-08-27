@@ -21,7 +21,14 @@ import {
 import { IPC_CHANNELS, type ActionResult, type NavigateResult } from '../shared/ipc.js'
 import type { PermissionRecord } from '../shared/permissions.js'
 import type { Scene } from '../shared/scenes.js'
-import type { ChromeState, FocusMode, PermissionPrompt } from '../shared/ui-state.js'
+import {
+  CONTROL_PRESENTATIONS,
+  presentationForFocusMode,
+  type ChromeState,
+  type ControlPresentation,
+  type FocusMode,
+  type PermissionPrompt,
+} from '../shared/ui-state.js'
 import type { UpdateSnapshot } from '../shared/updates.js'
 import { DownloadManager } from './download-manager.js'
 import { PermissionController } from './permission-controller.js'
@@ -38,6 +45,8 @@ import {
 import {
   DEFAULT_WINDOW_PRESENTATION_MODE,
   calculateWindowViewLayout,
+  clampRowCount,
+  maxVisibleRowsFor,
   type WindowPresentationMode,
 } from './window-layout.js'
 
@@ -139,6 +148,8 @@ class FoscenWindow {
   private chromeVisible = false
   private readonly presentationMode: WindowPresentationMode = DEFAULT_WINDOW_PRESENTATION_MODE
   private focusMode: FocusMode = 'navigate'
+  private controlPresentation: ControlPresentation = presentationForFocusMode('navigate')
+  private controlRowCount = 0
   private readonly rendererReady: Promise<void>
   private resolveRendererReady: (() => void) | undefined
   private boundsTimer: NodeJS.Timeout | undefined
@@ -364,6 +375,8 @@ class FoscenWindow {
 
   showChrome(mode: FocusMode = 'navigate'): void {
     this.focusMode = mode
+    this.controlPresentation = presentationForFocusMode(mode)
+    this.controlRowCount = 0
     this.chromeVisible = true
     this.layout()
     this.chromeView.setVisible(true)
@@ -373,8 +386,31 @@ class FoscenWindow {
 
   hideChrome(): void {
     this.chromeVisible = false
+    this.controlRowCount = 0
     this.chromeView.setVisible(false)
     this.sceneView.webContents.focus()
+  }
+
+  requestControlSize(request: unknown): void {
+    if (typeof request !== 'object' || request === null) {
+      return
+    }
+
+    const { presentation, rowCount } = request as { presentation?: unknown; rowCount?: unknown }
+    if (
+      typeof presentation !== 'string' ||
+      !CONTROL_PRESENTATIONS.includes(presentation as ControlPresentation)
+    ) {
+      return
+    }
+    if (typeof rowCount !== 'number') {
+      return
+    }
+
+    this.controlPresentation = presentation as ControlPresentation
+    const [width = 0, height = 0] = this.window.getContentSize()
+    this.controlRowCount = clampRowCount(rowCount, maxVisibleRowsFor(width, height))
+    this.layout()
   }
 
   async saveScene(name: unknown): Promise<ActionResult> {
@@ -540,7 +576,10 @@ class FoscenWindow {
 
   private layout(): void {
     const [width = 0, height = 0] = this.window.getContentSize()
-    const layout = calculateWindowViewLayout(width, height, this.presentationMode)
+    const layout = calculateWindowViewLayout(width, height, this.presentationMode, {
+      presentation: this.controlPresentation,
+      rowCount: this.controlRowCount,
+    })
     this.windowChromeView.setBounds(layout.windowChrome)
     this.windowChromeView.setVisible(layout.windowChromeVisible)
     this.sceneView.setBounds(layout.scene)
@@ -793,6 +832,9 @@ function trustedWindowFor(event: IpcMainInvokeEvent): FoscenWindow {
 function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.dismissChrome, (event) => trustedWindowFor(event).hideChrome())
   ipcMain.handle(IPC_CHANNELS.rendererReady, (event) => trustedWindowFor(event).markRendererReady())
+  ipcMain.handle(IPC_CHANNELS.requestControlSize, (event, request) =>
+    trustedWindowFor(event).requestControlSize(request),
+  )
   ipcMain.handle(IPC_CHANNELS.navigate, (event, candidate) =>
     trustedWindowFor(event).navigate(candidate),
   )

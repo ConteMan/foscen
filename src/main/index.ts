@@ -54,6 +54,15 @@ const UI_PARTITION = 'foscen-ui'
 const SCENE_PARTITION = 'persist:foscen-scenes'
 const WINDOW_BOUNDS_DEBOUNCE_MS = 300
 const CURRENT_SCENE_URL_DEBOUNCE_MS = 250
+/**
+ * ⌘L/⌘⇧P 等打开面板时，renderer 要在拿到 showChrome 状态后量出真实行数才会
+ * 回报 requestControlSize（正常在同一两帧内）。打开瞬间先按 rowCount=0 布局但
+ * 不显示，等回报后再显示，避免用户看到 90px 空壳跳到最终高度。
+ * 如果 renderer 迟迟不回报（卡死、崩溃、被另一 agent 改坏），这个兜底超时会
+ * 强制显示当前（可能仍是 0 行）的布局——保证面板总能打开，代价是极端情况下
+ * 仍可能有一次可见跳变，但这比“再也打不开”好。
+ */
+const REVEAL_FALLBACK_MS = 48
 const LIGHT_WINDOW_FRAME_COLOR = '#d9dcda'
 const DARK_WINDOW_FRAME_COLOR = '#1c211e'
 
@@ -150,6 +159,7 @@ class FoscenWindow {
   private focusMode: FocusMode = 'navigate'
   private controlPresentation: ControlPresentation = presentationForFocusMode('navigate')
   private controlRowCount = 0
+  private revealTimer: NodeJS.Timeout | undefined
   private readonly rendererReady: Promise<void>
   private resolveRendererReady: (() => void) | undefined
   private boundsTimer: NodeJS.Timeout | undefined
@@ -374,12 +384,19 @@ class FoscenWindow {
   }
 
   showChrome(mode: FocusMode = 'navigate'): void {
+    const isFreshOpen = !this.chromeVisible
     this.focusMode = mode
     this.controlPresentation = presentationForFocusMode(mode)
-    this.controlRowCount = 0
+    if (isFreshOpen) {
+      this.controlRowCount = 0
+    }
     this.chromeVisible = true
     this.layout()
-    this.chromeView.setVisible(true)
+    if (isFreshOpen) {
+      this.beginReveal()
+    } else {
+      this.chromeView.setVisible(true)
+    }
     this.chromeView.webContents.focus()
     this.sendState()
   }
@@ -387,6 +404,7 @@ class FoscenWindow {
   hideChrome(): void {
     this.chromeVisible = false
     this.controlRowCount = 0
+    this.clearRevealTimer()
     this.chromeView.setVisible(false)
     this.sceneView.webContents.focus()
   }
@@ -411,6 +429,27 @@ class FoscenWindow {
     const [width = 0, height = 0] = this.window.getContentSize()
     this.controlRowCount = clampRowCount(rowCount, maxVisibleRowsFor(width, height))
     this.layout()
+    if (this.revealTimer) {
+      // renderer 已经报回真实行数：布局已经是最终尺寸，现在显示不会跳变。
+      this.clearRevealTimer()
+      this.chromeView.setVisible(true)
+    }
+  }
+
+  private beginReveal(): void {
+    this.clearRevealTimer()
+    this.revealTimer = setTimeout(() => {
+      this.revealTimer = undefined
+      this.chromeView.setVisible(true)
+    }, REVEAL_FALLBACK_MS)
+    this.revealTimer.unref()
+  }
+
+  private clearRevealTimer(): void {
+    if (this.revealTimer) {
+      clearTimeout(this.revealTimer)
+      this.revealTimer = undefined
+    }
   }
 
   async saveScene(name: unknown): Promise<ActionResult> {
@@ -526,6 +565,7 @@ class FoscenWindow {
       event.preventDefault()
       this.closePersistenceStarted = true
       this.closing = true
+      this.clearRevealTimer()
       if (this.boundsTimer) {
         clearTimeout(this.boundsTimer)
         this.boundsTimer = undefined
@@ -551,6 +591,7 @@ class FoscenWindow {
     })
     this.window.on('closed', () => {
       this.closing = true
+      this.clearRevealTimer()
       if (this.boundsTimer) {
         clearTimeout(this.boundsTimer)
       }

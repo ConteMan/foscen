@@ -112,28 +112,31 @@ option 可访问名 = 标题 + 空格 + 副文（URL 或快捷键）。
 
 主进程其它结果句保持现网，作短时 status（工作面 header 右侧，3 秒淡出）：
 
-| id                 | 文案                          |
-| ------------------ | ----------------------------- |
-| okSceneSaved       | 当前网页已保存为场景          |
-| errSceneSave       | 当前页面不能保存为场景        |
-| okSceneOpened      | 已打开“{name}”                |
-| errSceneMissing    | 场景不存在或已删除            |
-| errSceneOpen       | 无法打开场景                  |
-| okSceneDeleted     | 场景已删除                    |
-| errSceneDelete     | 无法删除场景                  |
-| okScreenshot       | 当前可见网页已保存为 PNG 截图 |
-| errScreenshot      | 截图失败                      |
-| okDownloadAllow    | 下载已允许                    |
-| okDownloadDeny     | 下载已拒绝                    |
-| errDownloadExpired | 下载审批无效或已过期          |
-| okPermission       | 权限决定已应用                |
-| errPermission      | 权限回应失败                  |
-| okRevoke           | 权限决定已撤销                |
-| errRevoke          | 权限撤销失败                  |
-| okUpdateCheck      | 正在检查升级                  |
-| errUpdateCheck     | 当前状态不能检查升级          |
-| okUpdateInstall    | 正在重启并安装升级            |
-| errUpdateInstall   | 尚无可安装的升级              |
+| id                  | 文案                                     |
+| ------------------- | ---------------------------------------- |
+| okSceneSaved        | 当前网页已保存为场景                     |
+| errSceneSave        | 当前页面不能保存为场景                   |
+| okSceneOpened       | 已打开“{name}”                           |
+| errSceneMissing     | 场景不存在或已删除                       |
+| errSceneOpen        | 无法打开场景                             |
+| okSceneDeleted      | 场景已删除                               |
+| errSceneDelete      | 无法删除场景                             |
+| okScreenshot        | 当前可见网页已保存为 PNG 截图            |
+| errScreenshot       | 截图失败                                 |
+| okDownloadAllow     | 下载已允许                               |
+| okDownloadDeny      | 下载已拒绝                               |
+| errDownloadExpired  | 下载审批无效或已过期                     |
+| okPermission        | 权限决定已应用                           |
+| errPermission       | 权限回应失败                             |
+| okRevoke            | 权限决定已撤销                           |
+| errRevoke           | 权限撤销失败                             |
+| okUpdateCheck       | 正在检查升级                             |
+| errUpdateCheck      | 当前状态不能检查升级                     |
+| errUpdateCheckRun   | 无法检查更新，请稍后重试                 |
+| errUpdatePrepare    | 新版本下载后未能完成安装准备，请稍后重试 |
+| errUpdateInstallRun | 无法安装已下载的新版本，请稍后重试       |
+| okUpdateInstall     | 正在重启并安装升级                       |
+| errUpdateInstall    | 尚无可安装的升级                         |
 
 删除确认：`删除场景“{name}”？`（现网 `confirm`，保留）。
 
@@ -164,7 +167,8 @@ option 可访问名 = 标题 + 空格 + 副文（URL 或快捷键）。
 权限：摄像头、麦克风、位置、通知、写入剪贴板；允许、拒绝；一次、本次会话、始终。  
 提示标题：`请求{权限}、{权限}`（现 `请求摄像头、麦克风` 这种拼接）。
 
-升级标题：此构建不支持自动升级 / 可以检查新版本 / 正在检查新版本 / 发现新版本 / 新版本已准备好 / 已经是最新版本 / 检查升级失败。  
+升级标题：此构建不支持自动升级 / 可以检查新版本 / 正在检查新版本 / 发现新版本 / 新版本已准备好 / 已经是最新版本 / 升级失败。
+升级失败正文按阶段：`errUpdateCheckRun`（检查）/ `errUpdatePrepare`（已发现新版本、下载之后的校验或安装准备）/ `errUpdateInstallRun`（已下载、安装）。不要在安装准备失败时说「无法检查更新」。真实错误只写日志，不进界面。  
 版本行：`当前 {v}` 或 `当前 {v} · 可用 {w}`。
 
 ## 明确不用

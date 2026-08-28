@@ -524,7 +524,7 @@ function renderUpdate(state: ChromeState): void {
     available: '发现新版本',
     downloaded: '新版本已准备好',
     'up-to-date': '已经是最新版本',
-    error: '检查升级失败',
+    error: '升级失败',
   }
   updateTitle.textContent = titles[update.status]
 }

@@ -70,6 +70,31 @@ test('地址输入焦点环画在圆角输入壳上，而不是内层矩形 inpu
   assert.match(css, /\.omnibar\s*{[\s\S]*?padding-bottom:\s*8px/)
 })
 
+test('工作面焦点按选择器列表逐个尝试，不用逗号选择器抢到 tabpanel', async () => {
+  const [renderer, css] = await Promise.all([
+    readFile('src/renderer/index.ts', 'utf8'),
+    readFile('src/renderer/styles.css', 'utf8'),
+  ])
+
+  assert.match(renderer, /function focusPreferred\(/)
+  assert.match(renderer, /getAttribute\('role'\) !== 'tabpanel'/)
+  assert.doesNotMatch(
+    renderer,
+    /querySelector<HTMLElement>\(focusTargets\[mode\]\)/,
+    '不得把逗号选择器一次性交给 querySelector',
+  )
+  assert.doesNotMatch(css, /\[role=['"]tabpanel['"]\]:focus-visible/)
+})
+
+test('保存当前场景按钮不换行，名称输入可收缩', async () => {
+  const css = await readFile('src/renderer/styles.css', 'utf8')
+
+  assert.match(css, /\.inline-form input\s*{[\s\S]*?flex:\s*1 1 0/)
+  assert.match(css, /\.inline-form input\s*{[\s\S]*?min-width:\s*0/)
+  assert.match(css, /\.primary-button\s*{[\s\S]*?white-space:\s*nowrap/)
+  assert.match(css, /\.primary-button\s*{[\s\S]*?flex:\s*none/)
+})
+
 test('控制面顶部有 10px 拖动条，button/input 保持 no-drag', async () => {
   const [html, css] = await Promise.all([
     readFile('src/renderer/index.html', 'utf8'),

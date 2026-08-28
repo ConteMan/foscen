@@ -5,22 +5,32 @@ import type { UpdateSnapshot } from '../shared/updates.js'
 const UPDATE_INTERVAL_MS = 10 * 60 * 1_000
 const REPOSITORY = 'ConteMan/foscen'
 
+export const UPDATE_ERROR_CHECK = '无法检查更新，请稍后重试'
+export const UPDATE_ERROR_PREPARE = '新版本下载后未能完成安装准备，请稍后重试'
+export const UPDATE_ERROR_INSTALL = '无法安装已下载的新版本，请稍后重试'
+export const UPDATE_ERROR_INIT = '自动升级初始化失败'
+
 type AppUpdateInfo = Pick<App, 'getVersion' | 'isPackaged'>
+type UpdatePhase = 'idle' | 'checking' | 'downloading' | 'ready'
 
 export class UpdateService {
   private state: UpdateSnapshot
   private interval: NodeJS.Timeout | undefined
   private started = false
+  private phase: UpdatePhase = 'idle'
 
   private readonly handleCheckingForUpdate = (): void => {
+    this.phase = 'checking'
     this.setState({ status: 'checking', message: '正在检查更新…' })
   }
 
   private readonly handleUpdateAvailable = (): void => {
+    this.phase = 'downloading'
     this.setState({ status: 'available', message: '发现新版本，正在安全下载…' })
   }
 
   private readonly handleUpdateNotAvailable = (): void => {
+    this.phase = 'idle'
     this.setState({ status: 'up-to-date', message: '当前已是最新版本' })
   }
 
@@ -29,6 +39,7 @@ export class UpdateService {
     _notes: string,
     releaseName: string,
   ): void => {
+    this.phase = 'ready'
     const availableVersion = normalizeReleaseName(releaseName)
     this.setState({
       status: 'downloaded',
@@ -37,8 +48,9 @@ export class UpdateService {
     })
   }
 
-  private readonly handleError = (): void => {
-    this.setState({ status: 'error', message: '无法检查更新，请稍后重试' })
+  private readonly handleError = (error: Error): void => {
+    this.logUpdateError('autoUpdater', error)
+    this.setState({ status: 'error', message: messageForPhase(this.phase) })
   }
 
   constructor(
@@ -74,8 +86,9 @@ export class UpdateService {
 
     try {
       this.updater.setFeedURL({ url: this.feedUrl() })
-    } catch {
-      this.setState({ status: 'error', message: '自动升级初始化失败' })
+    } catch (error) {
+      this.logUpdateError('setFeedURL', error)
+      this.setState({ status: 'error', message: UPDATE_ERROR_INIT })
       return
     }
 
@@ -111,11 +124,13 @@ export class UpdateService {
     }
 
     try {
+      this.phase = 'checking'
       this.setState({ status: 'checking', message: '正在检查更新…' })
       this.updater.checkForUpdates()
       return true
-    } catch {
-      this.setState({ status: 'error', message: '无法检查更新，请稍后重试' })
+    } catch (error) {
+      this.logUpdateError('checkForUpdates', error)
+      this.setState({ status: 'error', message: UPDATE_ERROR_CHECK })
       return false
     }
   }
@@ -148,6 +163,28 @@ export class UpdateService {
   private emit(): void {
     this.onChanged(this.snapshot())
   }
+
+  private logUpdateError(where: string, error: unknown): void {
+    const err = error instanceof Error ? error : new Error(String(error))
+    console.error(`[foscen-update] ${where} failed phase=${this.phase}`)
+    console.error(err)
+    if (error && typeof error === 'object') {
+      const extras = error as { code?: unknown; errno?: unknown }
+      if (extras.code !== undefined || extras.errno !== undefined) {
+        console.error('[foscen-update] error codes', { code: extras.code, errno: extras.errno })
+      }
+    }
+  }
+}
+
+function messageForPhase(phase: UpdatePhase): string {
+  if (phase === 'downloading') {
+    return UPDATE_ERROR_PREPARE
+  }
+  if (phase === 'ready') {
+    return UPDATE_ERROR_INSTALL
+  }
+  return UPDATE_ERROR_CHECK
 }
 
 function normalizeReleaseName(candidate: unknown): string | undefined {

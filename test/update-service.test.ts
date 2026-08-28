@@ -4,7 +4,12 @@ import test from 'node:test'
 
 import type { App, AutoUpdater, FeedURLOptions } from 'electron'
 
-import { UpdateService } from '../src/main/update-service.js'
+import {
+  UPDATE_ERROR_CHECK,
+  UPDATE_ERROR_INSTALL,
+  UPDATE_ERROR_PREPARE,
+  UpdateService,
+} from '../src/main/update-service.js'
 
 class FakeUpdater extends EventEmitter {
   feedUrl = ''
@@ -96,4 +101,87 @@ test('只有已下载的规范版本才能触发安装', () => {
   assert.equal(service.install(), true)
   assert.equal(updater.installs, 1)
   service.dispose()
+})
+
+test('检查阶段失败仍说无法检查更新，并记录真实错误', () => {
+  const updater = new FakeUpdater()
+  const logged: unknown[] = []
+  const originalError = console.error
+  console.error = (...args: unknown[]) => {
+    logged.push(args)
+  }
+  const service = new UpdateService(
+    appInfo(true),
+    updater as unknown as AutoUpdater,
+    () => undefined,
+    'darwin',
+    'arm64',
+  )
+
+  try {
+    service.start()
+    updater.emit('error', Object.assign(new Error('feed HTTP 500'), { code: 'ENOTFOUND' }))
+    assert.equal(service.snapshot().status, 'error')
+    assert.equal(service.snapshot().message, UPDATE_ERROR_CHECK)
+    assert.ok(logged.some((entry) => String(entry).includes('feed HTTP 500')))
+    assert.ok(logged.some((entry) => String(entry).includes('phase=checking')))
+  } finally {
+    console.error = originalError
+    service.dispose()
+  }
+})
+
+test('下载后失败时的文案不得是无法检查更新', () => {
+  const updater = new FakeUpdater()
+  const logged: unknown[] = []
+  const originalError = console.error
+  console.error = (...args: unknown[]) => {
+    logged.push(args)
+  }
+  const service = new UpdateService(
+    appInfo(true),
+    updater as unknown as AutoUpdater,
+    () => undefined,
+    'darwin',
+    'arm64',
+  )
+
+  try {
+    service.start()
+    updater.emit('update-available')
+    const failure = Object.assign(new Error('The update is improperly signed'), { code: 8 })
+    updater.emit('error', failure)
+    assert.equal(service.snapshot().status, 'error')
+    assert.equal(service.snapshot().message, UPDATE_ERROR_PREPARE)
+    assert.notEqual(service.snapshot().message, UPDATE_ERROR_CHECK)
+    assert.doesNotMatch(service.snapshot().message ?? '', /无法检查更新/)
+    assert.ok(logged.some((entry) => String(entry).includes('The update is improperly signed')))
+    assert.ok(logged.some((entry) => String(entry).includes('phase=downloading')))
+  } finally {
+    console.error = originalError
+    service.dispose()
+  }
+})
+
+test('已下载后再失败使用安装失败文案', () => {
+  const updater = new FakeUpdater()
+  const originalError = console.error
+  console.error = () => undefined
+  const service = new UpdateService(
+    appInfo(true),
+    updater as unknown as AutoUpdater,
+    () => undefined,
+    'darwin',
+    'arm64',
+  )
+  try {
+    service.start()
+    updater.emit('update-downloaded', {}, '', 'v0.2.1', new Date(), 'https://example.invalid')
+    updater.emit('error', new Error('quitAndInstall rejected'))
+    assert.equal(service.snapshot().message, UPDATE_ERROR_INSTALL)
+    assert.notEqual(service.snapshot().message, UPDATE_ERROR_CHECK)
+  } finally {
+    console.error = originalError
+    service.dispose()
+  }
 })

@@ -529,16 +529,37 @@ function renderUpdate(state: ChromeState): void {
   updateTitle.textContent = titles[update.status]
 }
 
+function isUsableFocusTarget(element: HTMLElement): boolean {
+  return !element.hidden && element.closest('[hidden]') === null
+}
+
+function focusPreferred(selectors: readonly string[]): void {
+  for (const selector of selectors) {
+    const element = document.querySelector<HTMLElement>(selector)
+    if (!element || !isUsableFocusTarget(element)) {
+      continue
+    }
+    // querySelector('a, b') 按文档顺序而不是选择器优先级，tabpanel 会永远抢在内部按钮前面。
+    // 快捷键打开时上一次输入是键盘，程序化 focus 会匹配 :focus-visible，容器上就会画出贯通亮线。
+    const focusVisible = element.getAttribute('role') !== 'tabpanel'
+    element.focus({ preventScroll: true, focusVisible })
+    return
+  }
+}
+
 function focusSurface(mode: SurfacePanel): void {
   switchSurfacePanel(mode)
-  const focusTargets: Record<SurfacePanel, string> = {
-    scenes: '[data-scene-name]',
-    downloads: '[data-download-list] button, [data-panel="downloads"]',
-    permissions:
-      '[data-permission-prompt]:not([hidden]) button, [data-permission-list] button, [data-panel="permissions"]',
-    update: '[data-update-check]',
+  const focusTargets: Record<SurfacePanel, readonly string[]> = {
+    scenes: ['[data-scene-name]'],
+    downloads: ['[data-download-list] button', '[data-panel="downloads"]'],
+    permissions: [
+      '[data-permission-prompt]:not([hidden]) button',
+      '[data-permission-list] button',
+      '[data-panel="permissions"]',
+    ],
+    update: ['[data-update-check]'],
   }
-  document.querySelector<HTMLElement>(focusTargets[mode])?.focus()
+  focusPreferred(focusTargets[mode])
 }
 
 function applyFocus(mode: FocusMode): void {

@@ -21,7 +21,14 @@ import {
 import { IPC_CHANNELS, type ActionResult, type NavigateResult } from '../shared/ipc.js'
 import type { PermissionRecord } from '../shared/permissions.js'
 import type { Scene } from '../shared/scenes.js'
-import type { ChromeState, FocusMode, PermissionPrompt } from '../shared/ui-state.js'
+import {
+  CONTROL_PRESENTATIONS,
+  presentationForFocusMode,
+  type ChromeState,
+  type ControlPresentation,
+  type FocusMode,
+  type PermissionPrompt,
+} from '../shared/ui-state.js'
 import type { UpdateSnapshot } from '../shared/updates.js'
 import { DownloadManager } from './download-manager.js'
 import { PermissionController } from './permission-controller.js'
@@ -36,8 +43,12 @@ import {
   normalizeSceneUrl,
 } from './url-policy.js'
 import {
+  CONTROL_CORNER_RADIUS,
+  CONTROL_PANEL_COLOR,
   DEFAULT_WINDOW_PRESENTATION_MODE,
   calculateWindowViewLayout,
+  clampRowCount,
+  maxVisibleRowsFor,
   type WindowPresentationMode,
 } from './window-layout.js'
 
@@ -45,6 +56,15 @@ const UI_PARTITION = 'foscen-ui'
 const SCENE_PARTITION = 'persist:foscen-scenes'
 const WINDOW_BOUNDS_DEBOUNCE_MS = 300
 const CURRENT_SCENE_URL_DEBOUNCE_MS = 250
+/**
+ * ⌘L/⌘⇧P 等打开面板时，renderer 要在拿到 showChrome 状态后量出真实行数才会
+ * 回报 requestControlSize（正常在同一两帧内）。打开瞬间先按 rowCount=0 布局但
+ * 不显示，等回报后再显示，避免用户看到 90px 空壳跳到最终高度。
+ * 如果 renderer 迟迟不回报（卡死、崩溃、被另一 agent 改坏），这个兜底超时会
+ * 强制显示当前（可能仍是 0 行）的布局——保证面板总能打开，代价是极端情况下
+ * 仍可能有一次可见跳变，但这比“再也打不开”好。
+ */
+const REVEAL_FALLBACK_MS = 48
 const LIGHT_WINDOW_FRAME_COLOR = '#d9dcda'
 const DARK_WINDOW_FRAME_COLOR = '#1c211e'
 
@@ -139,6 +159,10 @@ class FoscenWindow {
   private chromeVisible = false
   private readonly presentationMode: WindowPresentationMode = DEFAULT_WINDOW_PRESENTATION_MODE
   private focusMode: FocusMode = 'navigate'
+  private controlPresentation: ControlPresentation = presentationForFocusMode('navigate')
+  private controlRowCount = 0
+  private chromeOpenGeneration = 0
+  private revealTimer: NodeJS.Timeout | undefined
   private readonly rendererReady: Promise<void>
   private resolveRendererReady: (() => void) | undefined
   private boundsTimer: NodeJS.Timeout | undefined
@@ -219,6 +243,8 @@ class FoscenWindow {
     this.window.contentView.addChildView(this.sceneView)
     this.window.contentView.addChildView(this.chromeView)
     this.windowChromeView.setBackgroundColor(windowFrameColor())
+    this.chromeView.setBackgroundColor(CONTROL_PANEL_COLOR)
+    this.chromeView.setBorderRadius(CONTROL_CORNER_RADIUS)
     this.chromeView.setVisible(false)
 
     this.downloadManager = new DownloadManager({
@@ -363,18 +389,81 @@ class FoscenWindow {
   }
 
   showChrome(mode: FocusMode = 'navigate'): void {
+    const isFreshOpen = !this.chromeVisible
     this.focusMode = mode
+    this.controlPresentation = presentationForFocusMode(mode)
+    if (isFreshOpen) {
+      this.controlRowCount = 0
+      this.chromeOpenGeneration += 1
+    }
     this.chromeVisible = true
     this.layout()
-    this.chromeView.setVisible(true)
+    if (isFreshOpen) {
+      this.beginReveal()
+    } else {
+      this.chromeView.setVisible(true)
+    }
     this.chromeView.webContents.focus()
-    this.sendState()
+    this.flushChromeState()
   }
 
   hideChrome(): void {
     this.chromeVisible = false
+    this.controlRowCount = 0
+    this.clearRevealTimer()
+    this.clearStateSendImmediate()
     this.chromeView.setVisible(false)
     this.sceneView.webContents.focus()
+  }
+
+  requestControlSize(request: unknown): void {
+    if (typeof request !== 'object' || request === null) {
+      return
+    }
+
+    const { presentation, rowCount } = request as { presentation?: unknown; rowCount?: unknown }
+    if (
+      typeof presentation !== 'string' ||
+      !CONTROL_PRESENTATIONS.includes(presentation as ControlPresentation)
+    ) {
+      return
+    }
+    if (typeof rowCount !== 'number') {
+      return
+    }
+
+    this.controlPresentation = presentation as ControlPresentation
+    const [width = 0, height = 0] = this.window.getContentSize()
+    this.controlRowCount = clampRowCount(rowCount, maxVisibleRowsFor(width, height))
+    this.layout()
+    if (this.chromeVisible) {
+      this.clearRevealTimer()
+      this.chromeView.setVisible(true)
+    }
+  }
+
+  private beginReveal(): void {
+    this.clearRevealTimer()
+    this.revealTimer = setTimeout(() => {
+      this.revealTimer = undefined
+      this.chromeView.setVisible(true)
+    }, REVEAL_FALLBACK_MS)
+    // 必须保持引用：unref 后 Electron 在无其它 libuv 活动时不会调度该定时器，
+    // Esc 后再按 ⌘L 会永远不显示。
+  }
+
+  private clearRevealTimer(): void {
+    if (this.revealTimer) {
+      clearTimeout(this.revealTimer)
+      this.revealTimer = undefined
+    }
+  }
+
+  private clearStateSendImmediate(): void {
+    if (this.stateSendImmediate) {
+      clearImmediate(this.stateSendImmediate)
+      this.stateSendImmediate = undefined
+    }
   }
 
   async saveScene(name: unknown): Promise<ActionResult> {
@@ -490,6 +579,7 @@ class FoscenWindow {
       event.preventDefault()
       this.closePersistenceStarted = true
       this.closing = true
+      this.clearRevealTimer()
       if (this.boundsTimer) {
         clearTimeout(this.boundsTimer)
         this.boundsTimer = undefined
@@ -515,6 +605,7 @@ class FoscenWindow {
     })
     this.window.on('closed', () => {
       this.closing = true
+      this.clearRevealTimer()
       if (this.boundsTimer) {
         clearTimeout(this.boundsTimer)
       }
@@ -522,10 +613,7 @@ class FoscenWindow {
         clearTimeout(this.currentUrlTimer)
         this.currentUrlTimer = undefined
       }
-      if (this.stateSendImmediate) {
-        clearImmediate(this.stateSendImmediate)
-        this.stateSendImmediate = undefined
-      }
+      this.clearStateSendImmediate()
       this.flushCurrentUrlPersistence()
       this.permissionController?.dispose()
       this.permissionController = undefined
@@ -540,12 +628,16 @@ class FoscenWindow {
 
   private layout(): void {
     const [width = 0, height = 0] = this.window.getContentSize()
-    const layout = calculateWindowViewLayout(width, height, this.presentationMode)
+    const layout = calculateWindowViewLayout(width, height, this.presentationMode, {
+      presentation: this.controlPresentation,
+      rowCount: this.controlRowCount,
+    })
     this.windowChromeView.setBounds(layout.windowChrome)
     this.windowChromeView.setVisible(layout.windowChromeVisible)
     this.sceneView.setBounds(layout.scene)
     this.sceneView.setBorderRadius(layout.sceneBorderRadius)
     this.chromeView.setBounds(layout.control)
+    this.chromeView.setBorderRadius(CONTROL_CORNER_RADIUS)
   }
 
   private installNavigationGuards(): void {
@@ -730,24 +822,33 @@ class FoscenWindow {
 
     this.stateSendImmediate = setImmediate(() => {
       this.stateSendImmediate = undefined
-      if (!this.chromeVisible || this.chromeView.webContents.isDestroyed()) {
-        return
-      }
-      const history = this.sceneView.webContents.navigationHistory
-      const state: ChromeState = {
-        currentUrl: displayableSceneUrl(this.sceneView.webContents.getURL()),
-        canGoBack: history.canGoBack(),
-        canGoForward: history.canGoForward(),
-        scenes: this.scenes,
-        downloads: this.downloads,
-        permissionRecords: this.permissionRecords,
-        permissionPrompt: this.permissionPrompt,
-        update: this.update,
-        focusMode: this.focusMode,
-      }
-      this.chromeView.webContents.send(IPC_CHANNELS.showChrome, state)
+      this.emitChromeState()
     })
-    this.stateSendImmediate.unref()
+  }
+
+  private flushChromeState(): void {
+    this.clearStateSendImmediate()
+    this.emitChromeState()
+  }
+
+  private emitChromeState(): void {
+    if (!this.chromeVisible || this.chromeView.webContents.isDestroyed()) {
+      return
+    }
+    const history = this.sceneView.webContents.navigationHistory
+    const state: ChromeState = {
+      currentUrl: displayableSceneUrl(this.sceneView.webContents.getURL()),
+      canGoBack: history.canGoBack(),
+      canGoForward: history.canGoForward(),
+      scenes: this.scenes,
+      downloads: this.downloads,
+      permissionRecords: this.permissionRecords,
+      permissionPrompt: this.permissionPrompt,
+      update: this.update,
+      focusMode: this.focusMode,
+      openGeneration: this.chromeOpenGeneration,
+    }
+    this.chromeView.webContents.send(IPC_CHANNELS.showChrome, state)
   }
 
   private async waitForRendererReady(): Promise<void> {
@@ -793,6 +894,9 @@ function trustedWindowFor(event: IpcMainInvokeEvent): FoscenWindow {
 function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.dismissChrome, (event) => trustedWindowFor(event).hideChrome())
   ipcMain.handle(IPC_CHANNELS.rendererReady, (event) => trustedWindowFor(event).markRendererReady())
+  ipcMain.handle(IPC_CHANNELS.requestControlSize, (event, request) =>
+    trustedWindowFor(event).requestControlSize(request),
+  )
   ipcMain.handle(IPC_CHANNELS.navigate, (event, candidate) =>
     trustedWindowFor(event).navigate(candidate),
   )

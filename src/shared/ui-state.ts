@@ -14,6 +14,15 @@ export const FOCUS_MODES = [
 
 export type FocusMode = (typeof FOCUS_MODES)[number]
 
+export const CONTROL_PRESENTATIONS = ['omnibar', 'surface'] as const
+export type ControlPresentation = (typeof CONTROL_PRESENTATIONS)[number]
+export const MAX_VISIBLE_ROWS = 6
+export const MAX_VISIBLE_ROWS_COMPACT = 4
+
+export function presentationForFocusMode(mode: FocusMode): ControlPresentation {
+  return mode === 'navigate' || mode === 'command' ? 'omnibar' : 'surface'
+}
+
 export interface PermissionPrompt {
   readonly id: string
   readonly origin: string
@@ -31,4 +40,6 @@ export interface ChromeState {
   readonly permissionPrompt: PermissionPrompt | null
   readonly update: UpdateSnapshot
   readonly focusMode: FocusMode
+  /** 每次从隐藏打开控制面时递增，renderer 用来区分「重新打开」和打开后的增量快照。 */
+  readonly openGeneration: number
 }

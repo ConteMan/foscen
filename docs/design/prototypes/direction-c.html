@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>方向 C · 重构命令台</title>
+    <style>
+      :root {
+        font-family:
+          Inter,
+          ui-sans-serif,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        color: #f5f5f7;
+        --accent: #f5f5f7;
+        --muted: #a1a1a6;
+        --line: rgb(255 255 255 / 8%);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      body {
+        margin: 0;
+        background: #0a0a0b;
+      }
+      .bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        padding: 14px 20px;
+        color: var(--muted);
+        font-size: 12px;
+        background: #141416;
+        border-bottom: 1px solid rgb(255 255 255 / 8%);
+      }
+      .bar button {
+        min-height: 28px;
+        padding: 0 10px;
+        color: var(--muted);
+        font: inherit;
+        background: transparent;
+        border: 1px solid rgb(255 255 255 / 12%);
+        border-radius: 999px;
+      }
+      .bar button[aria-pressed='true'] {
+        color: #0a0a0b;
+        font-weight: 600;
+        background: var(--accent);
+        border-color: transparent;
+      }
+      .note {
+        padding: 12px 20px;
+        color: var(--muted);
+        font-size: 13px;
+        border-bottom: 1px solid rgb(255 255 255 / 8%);
+      }
+      .stage {
+        display: grid;
+        place-items: center;
+        padding: 28px 16px;
+      }
+      .window {
+        position: relative;
+        width: min(100%, 1280px);
+        height: min(72vh, 800px);
+        overflow: hidden;
+        background: #26262a;
+        border-radius: 10px;
+      }
+      .scene {
+        position: absolute;
+        inset: 10px;
+        padding: 24px 40px;
+        color: #1c1c1e;
+        background: #f4f4f6;
+        border-radius: 8px;
+      }
+      .overlay {
+        position: absolute;
+        left: 50%;
+        top: 56px;
+        display: grid;
+        grid-template-rows: 44px 40px auto 36px minmax(0, 1fr) 28px;
+        width: min(800px, calc(100% - 48px));
+        height: 400px;
+        overflow: hidden;
+        background: #1c1c1e;
+        border: 1px solid rgb(255 255 255 / 10%);
+        border-radius: 10px;
+        box-shadow: 0 12px 32px rgb(0 0 0 / 40%);
+        transform: translateX(-50%);
+      }
+      .header,
+      .nav,
+      .tabs,
+      .footer {
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+      }
+      .header {
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        cursor: grab;
+      }
+      .brand {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .mark {
+        width: 24px;
+        height: 24px;
+      }
+      .status {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .nav {
+        gap: 6px;
+      }
+      .nav input {
+        flex: 1;
+        height: 36px;
+        padding: 0 10px;
+        color: inherit;
+        font: inherit;
+        font-size: 14px;
+        background: rgb(0 0 0 / 32%);
+        border: 1px solid rgb(255 255 255 / 14%);
+        border-radius: 8px;
+      }
+      .icon {
+        width: 28px;
+        height: 28px;
+        color: inherit;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 8px;
+      }
+      .suggest {
+        border-bottom: 1px solid var(--line);
+      }
+      .suggest .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 36px;
+        padding: 0 16px;
+        font-size: 13px;
+      }
+      .suggest .row.active {
+        background: rgb(255 255 255 / 9%);
+      }
+      .suggest .row span {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .tabs {
+        gap: 4px;
+        border-bottom: 1px solid var(--line);
+      }
+      .tabs button {
+        height: 34px;
+        padding: 0 12px;
+        color: var(--muted);
+        font: inherit;
+        font-size: 12px;
+        background: transparent;
+        border: 0;
+        border-bottom: 2px solid transparent;
+      }
+      .tabs button[aria-selected='true'] {
+        color: #f5f5f7;
+        font-size: 13px;
+        font-weight: 600;
+        border-bottom-color: var(--accent);
+      }
+      .body {
+        padding: 16px;
+        overflow: auto;
+      }
+      .cmd {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 40px;
+        padding: 0 10px;
+        border-radius: 8px;
+      }
+      .cmd:hover,
+      .cmd:focus {
+        background: rgb(255 255 255 / 9%);
+      }
+      kbd {
+        padding: 1px 5px;
+        color: var(--muted);
+        font: inherit;
+        font-size: 11px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+      }
+      .footer {
+        gap: 14px;
+        color: var(--muted);
+        font-size: 11px;
+        border-top: 1px solid var(--line);
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .empty {
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <strong>方向 C · 评审</strong>
+      <button type="button" data-tab="command" aria-pressed="true">命令 tab</button>
+      <button type="button" data-tab="scenes" aria-pressed="false">场景 tab</button>
+      <button type="button" data-tab="downloads" aria-pressed="false">下载 tab</button>
+      <button type="button" data-tab="settings" aria-pressed="false">设置 tab</button>
+      <button type="button" data-suggest aria-pressed="true">显示地址建议</button>
+    </div>
+    <p class="note">
+      固定 800×400。保留多 tab，但去掉 eyebrow/h1 海报、18px
+      大圆角和超宽命令按钮。地址建议只在输入聚焦时出现，最多 4 行。
+    </p>
+    <div class="stage">
+      <div class="window">
+        <div class="scene">
+          <p style="font-size: 11px; letter-spacing: 0.18em; color: #377657">SCENE</p>
+          <p style="margin-top: 280px; color: #6e6e73">
+            网页从面板下方露出。命令台盖住上半，但仍比现状 530×近全宽克制。
+          </p>
+        </div>
+        <div class="overlay" role="dialog" aria-label="Foscen 控制面">
+          <header class="header">
+            <div class="brand">
+              <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M5 9V6.5A1.5 1.5 0 0 1 6.5 5H9M15 5h2.5A1.5 1.5 0 0 1 19 6.5V9M19 15v2.5A1.5 1.5 0 0 1 17.5 19H15M9 19H6.5A1.5 1.5 0 0 1 5 17.5V15"
+                  fill="none"
+                  stroke="#F5F5F7"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+                <rect x="8" y="8" width="8" height="8" rx="2" fill="#F5F5F7" />
+              </svg>
+              Foscen
+            </div>
+            <p class="status">控制面已就绪</p>
+            <button class="icon" type="button" aria-label="关闭">×</button>
+          </header>
+          <div class="nav">
+            <button class="icon" type="button" disabled aria-label="后退">←</button>
+            <button class="icon" type="button" disabled aria-label="前进">→</button>
+            <button class="icon" type="button" aria-label="刷新">↻</button>
+            <input id="url" value="https://notes.example/now" />
+          </div>
+          <div class="suggest" data-suggest-list>
+            <div class="row active">
+              <strong>当前场景</strong><span>https://notes.example/now</span>
+            </div>
+            <div class="row"><strong>写作索引</strong><span>https://notes.example/</span></div>
+            <div class="row">
+              <strong>Foscen 仓库</strong><span>https://github.com/ConteMan/foscen</span>
+            </div>
+            <div class="row"><strong>项目板</strong><span>https://board.example/now</span></div>
+          </div>
+          <nav class="tabs" role="tablist">
+            <button type="button" role="tab" aria-selected="true" data-panel="command">命令</button>
+            <button type="button" role="tab" aria-selected="false" data-panel="scenes">场景</button>
+            <button type="button" role="tab" aria-selected="false" data-panel="downloads">
+              下载
+            </button>
+            <button type="button" role="tab" aria-selected="false" data-panel="settings">
+              设置
+            </button>
+          </nav>
+          <div class="body">
+            <section data-pane="command">
+              <div class="cmd"><span>打开网页</span><kbd>⌘ L</kbd></div>
+              <div class="cmd"><span>保存截图</span><kbd>⌘ ⇧ S</kbd></div>
+              <div class="cmd"><span>保存场景</span><kbd>⌘ S</kbd></div>
+              <div class="cmd"><span>下载</span><kbd>⌘ J</kbd></div>
+              <div class="cmd"><span>设置</span><kbd>⌘ ,</kbd></div>
+            </section>
+            <section data-pane="scenes" hidden>
+              <h1>场景</h1>
+              <p class="empty">还没有保存场景。</p>
+            </section>
+            <section data-pane="downloads" hidden>
+              <h1>下载</h1>
+              <p class="empty">当前没有下载。</p>
+            </section>
+            <section data-pane="settings" hidden>
+              <h1>设置</h1>
+              <p class="empty">窗口 · 权限 · 更新 · 关于（ADR-0003，本原型只占位）</p>
+            </section>
+          </div>
+          <footer class="footer">
+            <span>Esc 返回网页</span><span>Tab 在 C 里移动焦点，不补全</span><span>仅 HTTPS</span>
+          </footer>
+        </div>
+      </div>
+    </div>
+    <script>
+      const suggest = document.querySelector('[data-suggest-list]')
+      document.querySelectorAll('.bar [data-tab]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const name = button.dataset.tab
+          document.querySelectorAll('.bar [data-tab]').forEach((item) => {
+            item.setAttribute('aria-pressed', String(item === button))
+          })
+          document.querySelectorAll('.tabs [role="tab"]').forEach((tab) => {
+            tab.setAttribute('aria-selected', String(tab.dataset.panel === name))
+          })
+          document.querySelectorAll('[data-pane]').forEach((pane) => {
+            pane.hidden = pane.dataset.pane !== name
+          })
+        })
+      })
+      document.querySelector('[data-suggest]').addEventListener('click', (event) => {
+        const on = event.currentTarget.getAttribute('aria-pressed') !== 'true'
+        event.currentTarget.setAttribute('aria-pressed', String(on))
+        suggest.hidden = !on
+      })
+      document.querySelectorAll('.tabs [role="tab"]').forEach((tab) => {
+        tab.addEventListener('click', () => {
+          document.querySelector(`.bar [data-tab="${tab.dataset.panel}"]`).click()
+        })
+      })
+    </script>
+  </body>
+</html>

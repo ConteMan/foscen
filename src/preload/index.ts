@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import {
   IPC_CHANNELS,
   type ActionResult,
+  type ControlSizeRequest,
   type FoscenBridge,
   type NavigateResult,
 } from '../shared/ipc.js'
@@ -22,6 +23,9 @@ const bridge: FoscenBridge = Object.freeze({
   },
   rendererReady: async () => {
     await ipcRenderer.invoke(IPC_CHANNELS.rendererReady)
+  },
+  requestControlSize: async (request: ControlSizeRequest) => {
+    await ipcRenderer.invoke(IPC_CHANNELS.requestControlSize, request)
   },
   navigate: async (target: string) =>
     (await ipcRenderer.invoke(IPC_CHANNELS.navigate, target)) as NavigateResult,

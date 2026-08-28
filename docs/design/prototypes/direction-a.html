@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>方向 A · 极简聚焦条</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --field-0: #0a0a0b;
+        --field-1: #16161a;
+        --field-2: #24242a;
+        --frame: #26262a;
+        --focus: #f5f5f7;
+        --focus-strong: #f5f5f7;
+        --scene-hi: #f5f5f7;
+        --text: #f5f5f7;
+        --muted: #a1a1a6;
+        /* 中性板没有危险色：错误靠警示图标 + 加亮描边 + 主文字色 */
+        --line: rgb(255 255 255 / 8%);
+        --line-strong: rgb(255 255 255 / 14%);
+        --panel: rgb(20 20 22 / 82%);
+        --panel-solid: #1c1c1e;
+        --paper: #f4f4f6;
+        --paper-ink: #1c1c1e;
+        --paper-muted: #6e6e73;
+        --radius-panel: 12px;
+        --radius-control: 8px;
+        --shadow: 0 16px 40px rgb(0 0 0 / 45%);
+        --dur: 120ms;
+        --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #0a0a0b;
+        color: var(--text);
+      }
+
+      body {
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .review-bar,
+      .review-note {
+        padding: 16px 24px;
+      }
+
+      .review-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 16px;
+        align-items: center;
+        border-bottom: 1px solid rgb(255 255 255 / 8%);
+        background: #141416;
+      }
+
+      .review-bar strong {
+        margin-right: 8px;
+        font-size: 13px;
+        letter-spacing: 0.02em;
+      }
+
+      .review-bar button,
+      .size-toggle {
+        min-height: 30px;
+        padding: 0 10px;
+        color: var(--muted);
+        font: inherit;
+        font-size: 12px;
+        background: transparent;
+        border: 1px solid rgb(255 255 255 / 12%);
+        border-radius: 999px;
+        cursor: pointer;
+      }
+
+      .review-bar button[aria-pressed='true'],
+      .size-toggle[aria-pressed='true'] {
+        color: var(--field-0);
+        font-weight: 600;
+        background: var(--focus);
+        border-color: transparent;
+      }
+
+      .review-note {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+        border-bottom: 1px solid rgb(255 255 255 / 8%);
+      }
+
+      .review-note code {
+        color: var(--focus-strong);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+      }
+
+      .stage {
+        display: grid;
+        place-items: center;
+        padding: 28px 16px 40px;
+      }
+
+      .window {
+        position: relative;
+        width: min(100%, 1280px);
+        height: min(72vh, 800px);
+        overflow: hidden;
+        background: var(--frame);
+        border-radius: 10px;
+        box-shadow: 0 40px 80px rgb(0 0 0 / 45%);
+      }
+
+      .window.is-narrow {
+        width: min(100%, 720px);
+        height: 540px;
+      }
+
+      .scene {
+        position: absolute;
+        inset: 10px;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        overflow: hidden;
+        color: var(--paper-ink);
+        background:
+          radial-gradient(circle at 12% 0, rgb(0 0 0 / 4%), transparent 24rem), var(--paper);
+        border-radius: 8px;
+      }
+
+      .scene header,
+      .scene footer {
+        display: flex;
+        gap: 24px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 22px 48px;
+        color: var(--paper-muted);
+        font-size: 12px;
+      }
+
+      .scene h1 {
+        margin: 0;
+        color: var(--paper-ink);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+
+      .scene main {
+        display: grid;
+        align-content: start;
+        max-width: 520px;
+        margin: 48px auto 0;
+        padding: 0 24px;
+      }
+
+      .scene main p.kicker {
+        margin: 0 0 12px;
+        color: #377657;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+      }
+
+      .scene main h2 {
+        margin: 0;
+        font-size: 42px;
+        font-weight: 650;
+        letter-spacing: -0.04em;
+      }
+
+      .scene main p.lead {
+        margin: 14px 0 0;
+        color: var(--paper-muted);
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      .overlay {
+        position: absolute;
+        left: 50%;
+        top: 112px;
+        display: grid;
+        width: 640px;
+        overflow: hidden;
+        color: var(--text);
+        background: var(--panel);
+        border: 1px solid rgb(255 255 255 / 10%);
+        border-radius: var(--radius-panel);
+        box-shadow:
+          var(--shadow),
+          inset 0 1px 0 rgb(255 255 255 / 5%);
+        backdrop-filter: blur(20px) saturate(1.2);
+        transform: translateX(-50%);
+      }
+
+      .window.is-narrow .overlay {
+        top: 72px;
+        width: 640px;
+        max-width: calc(100% - 48px);
+      }
+
+      .overlay.is-surface {
+        top: 80px;
+        width: 720px;
+        max-height: 420px;
+      }
+
+      .drag-strip {
+        height: 10px;
+        cursor: grab;
+        background: linear-gradient(180deg, rgb(255 255 255 / 5%), transparent);
+      }
+
+      .input-row,
+      .surface-header {
+        display: grid;
+        gap: 6px;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 8px 8px;
+      }
+
+      .input-row {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+      }
+
+      .input-row.nav-hidden {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .nav {
+        display: flex;
+        gap: 2px;
+      }
+
+      .icon-btn {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        color: var(--text);
+        place-items: center;
+        background: transparent;
+        border: 0;
+        border-radius: var(--radius-control);
+        cursor: default;
+      }
+
+      .icon-btn:hover:not(:disabled) {
+        background: rgb(165 244 197 / 10%);
+      }
+
+      .icon-btn:disabled {
+        color: #5d7368;
+      }
+
+      .icon-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .field {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        height: 36px;
+        padding: 0 10px;
+        background: rgb(0 0 0 / 32%);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-control);
+      }
+
+      .field:focus-within {
+        border-color: var(--focus);
+        box-shadow: 0 0 0 2px rgb(255 255 255 / 70%);
+      }
+
+      .field.is-invalid {
+        border-color: rgb(255 255 255 / 32%);
+        box-shadow: none;
+      }
+
+      .field input {
+        width: 100%;
+        min-width: 0;
+        height: 34px;
+        padding: 0;
+        color: var(--text);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 20px;
+        background: transparent;
+        border: 0;
+        outline: none;
+      }
+
+      .field input::placeholder {
+        color: #7d9388;
+        font-weight: 400;
+      }
+
+      .results {
+        padding: 0 6px 4px;
+      }
+
+      .option {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        min-height: 40px;
+        padding: 0 8px;
+        border-radius: 8px;
+        cursor: default;
+      }
+
+      .option[aria-selected='true'] {
+        background: rgb(255 255 255 / 9%);
+      }
+
+      .option .glyph {
+        display: grid;
+        color: var(--focus);
+        place-items: center;
+      }
+
+      .option .glyph svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .option .copy {
+        min-width: 0;
+      }
+
+      .option .copy strong {
+        display: block;
+        overflow: hidden;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 18px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .option .copy span,
+      .kbd,
+      .foot {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 16px;
+      }
+
+      .option .copy span {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .option.is-error .glyph,
+      .option.is-error .copy strong {
+        color: var(--text);
+      }
+
+      .kbd {
+        padding: 1px 5px;
+        font-family: inherit;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+      }
+
+      .empty {
+        padding: 10px 14px 12px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .foot {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 14px 8px;
+      }
+
+      .surface-header {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        padding-bottom: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .brand-lockup {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .brand-lockup svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .surface-body {
+        display: grid;
+        gap: 12px;
+        padding: 14px 16px 16px;
+      }
+
+      .inline-form {
+        display: flex;
+        gap: 8px;
+      }
+
+      .inline-form input {
+        flex: 1;
+        height: 36px;
+        padding: 0 11px;
+        color: var(--text);
+        font: inherit;
+        background: rgb(0 0 0 / 32%);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-control);
+      }
+
+      .primary {
+        height: 36px;
+        padding: 0 12px;
+        color: var(--field-0);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        background: var(--focus);
+        border: 0;
+        border-radius: var(--radius-control);
+      }
+
+      .scene-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        min-height: 52px;
+        padding: 8px 10px;
+        background: rgb(180 255 217 / 6%);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+
+      .scene-card strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .meta {
+        margin-top: 4px;
+        overflow: hidden;
+        color: var(--muted);
+        font-size: 11px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .ghost {
+        height: 30px;
+        padding: 0 10px;
+        color: var(--text);
+        font: inherit;
+        font-size: 12px;
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .spin {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgb(255 255 255 / 14%);
+        border-top-color: var(--focus);
+        border-radius: 50%;
+        animation: spin 700ms linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      .option[aria-selected='true']:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      @media (prefers-reduced-transparency: reduce) {
+        .overlay {
+          background: var(--panel-solid);
+          backdrop-filter: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .spin {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="review-bar" role="toolbar" aria-label="设计评审状态">
+      <strong>评审用状态切换（不是产品 UI）</strong>
+      <button type="button" data-state="idle" aria-pressed="true">空态</button>
+      <button type="button" data-state="typing">输入中</button>
+      <button type="button" data-state="matches">有建议</button>
+      <button type="button" data-state="empty">无结果</button>
+      <button type="button" data-state="invalid">非法 HTTP</button>
+      <button type="button" data-state="loading">加载中</button>
+      <button type="button" data-state="failed">加载失败</button>
+      <button type="button" data-state="palette">命令面板</button>
+      <button type="button" data-state="surface">场景工作面</button>
+      <button type="button" class="size-toggle" data-size="wide" aria-pressed="true">
+        1280 窗
+      </button>
+      <button type="button" class="size-toggle" data-size="narrow" aria-pressed="false">
+        720 窗
+      </button>
+    </div>
+    <p class="review-note">
+      方向 A：<code>⌘L</code> 只打开这条 640 宽的地址条，建议来自当前 URL
+      与已存场景。下面的浅色区域是 scene 网页，应始终露在面板周围。键盘：在地址条里可真实输入、↑↓
+      选择、Enter 激活、Esc 视为关闭。
+    </p>
+    <div class="stage">
+      <div class="window" data-window>
+        <section class="scene" aria-hidden="true">
+          <header>
+            <h1>SCENE</h1>
+            <span>笔记 · 项目 · 阅读</span>
+          </header>
+          <main>
+            <p class="kicker">FOCUS + SCENE</p>
+            <h2>当前网页还在。</h2>
+            <p class="lead">地址条应该盖住中间一小块，而不是把场景变成控制台的背景板。</p>
+          </main>
+          <footer>
+            <span>仅 HTTPS 场景</span>
+            <span>Esc 返回这里</span>
+          </footer>
+        </section>
+        <div class="overlay" data-overlay role="dialog" aria-label="打开场景">
+          <div data-omnibar-root>
+            <div class="drag-strip" aria-hidden="true"></div>
+            <div class="input-row" data-input-row>
+              <div class="nav" data-nav>
+                <button class="icon-btn" type="button" disabled aria-label="后退">
+                  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path
+                      d="M10 3 5 8l5 5"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+                <button class="icon-btn" type="button" disabled aria-label="前进">
+                  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path
+                      d="M6 3l5 5-5 5"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+                <button class="icon-btn" type="button" data-reload aria-label="刷新">
+                  <svg viewBox="0 0 16 16" fill="none" data-reload-icon aria-hidden="true">
+                    <path
+                      d="M3 7.25A5 5 0 0 1 12.5 6M13 8.75A5 5 0 0 1 3.5 10"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                    />
+                    <path
+                      d="M11 3.5v3h3M5 12.5v-3H2"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <label class="field" data-field>
+                <input
+                  id="omnibar"
+                  type="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  role="combobox"
+                  aria-expanded="true"
+                  aria-controls="suggestions"
+                  aria-autocomplete="list"
+                  aria-activedescendant=""
+                  placeholder="输入 HTTPS 地址或搜索场景"
+                />
+              </label>
+              <button class="icon-btn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path
+                    d="M4 4l8 8M12 4l-8 8"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div id="suggestions" class="results" role="listbox" aria-label="建议"></div>
+            <div class="empty" data-empty hidden></div>
+            <div class="foot" data-foot></div>
+          </div>
+          <div data-surface-root hidden>
+            <div class="drag-strip" aria-hidden="true"></div>
+            <div class="surface-header">
+              <div class="brand-lockup">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M5 9V6.5A1.5 1.5 0 0 1 6.5 5H9M15 5h2.5A1.5 1.5 0 0 1 19 6.5V9M19 15v2.5A1.5 1.5 0 0 1 17.5 19H15M9 19H6.5A1.5 1.5 0 0 1 5 17.5V15"
+                    fill="none"
+                    stroke="#F5F5F7"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                  <rect x="8" y="8" width="8" height="8" rx="2" fill="#F5F5F7" />
+                </svg>
+                场景
+              </div>
+              <span></span>
+              <button class="icon-btn" type="button" aria-label="关闭">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path
+                    d="M4 4l8 8M12 4l-8 8"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="surface-body">
+              <form class="inline-form" action="#" onsubmit="return false">
+                <input type="text" placeholder="给当前网页起个名字" maxlength="120" />
+                <button class="primary" type="button">保存当前场景</button>
+              </form>
+              <article class="scene-card">
+                <div>
+                  <strong>写作索引</strong>
+                  <p class="meta">https://notes.example/</p>
+                </div>
+                <div>
+                  <button class="primary" type="button">打开</button>
+                  <button class="ghost" type="button">删除</button>
+                </div>
+              </article>
+              <article class="scene-card">
+                <div>
+                  <strong>Foscen 仓库</strong>
+                  <p class="meta">https://github.com/ConteMan/foscen</p>
+                </div>
+                <div>
+                  <button class="primary" type="button">打开</button>
+                  <button class="ghost" type="button">删除</button>
+                </div>
+              </article>
+              <div class="foot">
+                <span>Esc 返回网页</span><span>地址条请用 ⌘ L，不要把网址栏钉在这里</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const CURRENT = { name: '当前场景', url: 'https://notes.example/now' }
+      const SCENES = [
+        { name: '写作索引', url: 'https://notes.example/' },
+        { name: 'Foscen 仓库', url: 'https://github.com/ConteMan/foscen' },
+        { name: '项目板', url: 'https://board.example/now' },
+        { name: '阅读列表', url: 'https://read.example/today' },
+      ]
+      const COMMANDS = [
+        { name: '打开网页', shortcut: '⌘ L' },
+        { name: '保存截图', shortcut: '⌘ ⇧ S' },
+        { name: '保存场景', shortcut: '⌘ S' },
+        { name: '下载', shortcut: '⌘ J' },
+        { name: '设置', shortcut: '⌘ ,' },
+        { name: '检查更新', shortcut: '⌘ U' },
+      ]
+
+      const overlay = document.querySelector('[data-overlay]')
+      const windowEl = document.querySelector('[data-window]')
+      const omnibarRoot = document.querySelector('[data-omnibar-root]')
+      const surfaceRoot = document.querySelector('[data-surface-root]')
+      const input = document.querySelector('#omnibar')
+      const field = document.querySelector('[data-field]')
+      const list = document.querySelector('#suggestions')
+      const empty = document.querySelector('[data-empty]')
+      const foot = document.querySelector('[data-foot]')
+      const inputRow = document.querySelector('[data-input-row]')
+      const nav = document.querySelector('[data-nav]')
+      const reloadBtn = document.querySelector('[data-reload]')
+      const reloadIcon = document.querySelector('[data-reload-icon]')
+      const stateButtons = document.querySelectorAll('.review-bar button[data-state]')
+      const sizeButtons = document.querySelectorAll('.size-toggle')
+
+      let mode = 'omnibar'
+      let items = []
+      let active = 0
+      let snapshot = 'idle'
+
+      const icons = {
+        globe:
+          '<svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.25" stroke="currentColor" stroke-width="1.75"/><path d="M3 8h10M8 3c1.7 1.8 1.7 8.2 0 10M8 3c-1.7 1.8-1.7 8.2 0 10" stroke="currentColor" stroke-width="1.5"/></svg>',
+        scene:
+          '<svg viewBox="0 0 16 16" fill="none"><path d="M4 6.5V4.5A1.5 1.5 0 0 1 5.5 3h2M10.5 3h2A1.5 1.5 0 0 1 14 4.5v2M14 10.5v2A1.5 1.5 0 0 1 12.5 14h-2M5.5 14h-2A1.5 1.5 0 0 1 2 12.5v-2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><rect x="5.5" y="5.5" width="5" height="5" rx="1.2" fill="currentColor"/></svg>',
+        bolt: '<svg viewBox="0 0 16 16" fill="none"><path d="M9 2.5 4.5 9h3.2L7 13.5 11.5 7H8.3L9 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+        warn: '<svg viewBox="0 0 16 16" fill="none"><path d="M8 3.2 2.6 12.5h10.8L8 3.2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 6.8v2.6M8 11.2h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+      }
+
+      function normalize(raw) {
+        const trimmed = raw.trim()
+        if (!trimmed) return { ok: false, reason: 'empty' }
+        if (/^https:\/\//i.test(trimmed)) {
+          try {
+            const url = new URL(trimmed)
+            if (url.username || url.password) return { ok: false, reason: 'https' }
+            return { ok: true, href: url.href }
+          } catch {
+            return { ok: false, reason: 'invalid' }
+          }
+        }
+        if (/^[a-z][a-z\d+.-]*:/i.test(trimmed)) return { ok: false, reason: 'https' }
+        try {
+          return { ok: true, href: new URL(`https://${trimmed}`).href }
+        } catch {
+          return { ok: false, reason: 'invalid' }
+        }
+      }
+
+      function isIdleQuery(query) {
+        const trimmed = query.trim()
+        if (!trimmed) return true
+        const parsed = normalize(trimmed)
+        return parsed.ok && parsed.href === CURRENT.url
+      }
+
+      function matchScenes(query) {
+        const idle = isIdleQuery(query)
+        const q = query.trim().toLowerCase()
+        return SCENES.filter((scene) => {
+          if (scene.url === CURRENT.url) return false
+          if (idle) return true
+          return `${scene.name} ${scene.url}`.toLowerCase().includes(q)
+        }).slice(0, 6)
+      }
+
+      function buildOmnibarItems(query, { forceError, loading, failed } = {}) {
+        if (loading) {
+          return [{ id: 'loading', kind: 'status', title: '正在打开网页', subtitle: query }]
+        }
+        if (failed) {
+          return [
+            {
+              id: 'failed',
+              kind: 'error',
+              title: '页面加载失败，请检查网络或地址',
+              subtitle: query,
+            },
+          ]
+        }
+        const parsed = normalize(query)
+        if (forceError || parsed.reason === 'https') {
+          return [
+            {
+              id: 'invalid',
+              kind: 'error',
+              title: '仅支持 HTTPS 网页地址',
+              subtitle: 'http、本地文件和带凭据的地址都会被拒绝',
+            },
+          ]
+        }
+        const rows = []
+        const idle = isIdleQuery(query)
+        if (!idle && parsed.ok && parsed.href !== CURRENT.url) {
+          rows.push({
+            id: 'go',
+            kind: 'go',
+            title: '前往',
+            subtitle: parsed.href,
+          })
+        }
+        if (
+          idle ||
+          CURRENT.url.toLowerCase().includes(query.trim().toLowerCase()) ||
+          CURRENT.name.includes(query)
+        ) {
+          rows.push({
+            id: 'current',
+            kind: 'current',
+            title: '当前场景',
+            subtitle: CURRENT.url,
+          })
+        }
+        for (const scene of matchScenes(query)) {
+          rows.push({
+            id: scene.url,
+            kind: 'scene',
+            title: scene.name,
+            subtitle: scene.url,
+          })
+        }
+        return rows
+      }
+
+      function renderList() {
+        list.replaceChildren()
+        empty.hidden = items.length > 0
+        list.hidden = items.length === 0
+        items.forEach((item, index) => {
+          const row = document.createElement('div')
+          row.className = 'option'
+          if (item.kind === 'error') row.classList.add('is-error')
+          row.id = `opt-${index}`
+          row.setAttribute('role', 'option')
+          row.setAttribute('aria-selected', String(index === active))
+          const glyphKind =
+            item.kind === 'error'
+              ? 'warn'
+              : item.kind === 'scene' || item.kind === 'current'
+                ? 'scene'
+                : item.kind === 'command'
+                  ? 'bolt'
+                  : 'globe'
+          const glyph = document.createElement('span')
+          glyph.className = 'glyph'
+          glyph.innerHTML = icons[glyphKind]
+          const copy = document.createElement('span')
+          copy.className = 'copy'
+          const title = document.createElement('strong')
+          title.textContent = item.title
+          const subtitle = document.createElement('span')
+          subtitle.textContent = item.subtitle ?? ''
+          copy.append(title, subtitle)
+          row.append(glyph, copy)
+          if (item.shortcut) {
+            const kbd = document.createElement('kbd')
+            kbd.className = 'kbd'
+            kbd.textContent = item.shortcut
+            row.append(kbd)
+          }
+          row.addEventListener('mouseenter', () => {
+            active = index
+            renderList()
+          })
+          list.append(row)
+        })
+        input.setAttribute('aria-activedescendant', items[active] ? `opt-${active}` : '')
+      }
+
+      function renderFoot(text) {
+        foot.textContent = ''
+        for (const part of text.split(' · ')) {
+          const span = document.createElement('span')
+          span.textContent = part
+          foot.append(span)
+        }
+      }
+
+      function setInvalid(on) {
+        field.classList.toggle('is-invalid', on)
+      }
+
+      function applySnapshot(name) {
+        snapshot = name
+        mode = name === 'palette' ? 'palette' : name === 'surface' ? 'surface' : 'omnibar'
+        overlay.classList.toggle('is-surface', mode === 'surface')
+        omnibarRoot.hidden = mode === 'surface'
+        surfaceRoot.hidden = mode !== 'surface'
+        nav.hidden = mode !== 'omnibar'
+        inputRow.classList.toggle('nav-hidden', mode !== 'omnibar')
+        const spin = reloadBtn.querySelector('.spin')
+        if (name === 'loading') {
+          reloadIcon.hidden = true
+          if (!spin) {
+            reloadBtn.append(Object.assign(document.createElement('span'), { className: 'spin' }))
+          }
+        } else {
+          reloadIcon.hidden = false
+          spin?.remove()
+        }
+
+        if (mode === 'surface') {
+          overlay.setAttribute('aria-label', '场景')
+          return
+        }
+
+        overlay.setAttribute('aria-label', mode === 'palette' ? '命令' : '打开场景')
+        input.placeholder = mode === 'palette' ? '搜索命令' : '输入 HTTPS 地址或搜索场景'
+        input.readOnly = name === 'loading'
+        const values = {
+          idle: CURRENT.url,
+          typing: 'fos',
+          matches: 'github',
+          empty: 'foo bar',
+          invalid: 'http://example.com',
+          loading: 'https://github.com/ConteMan/foscen',
+          failed: 'https://offline.example/',
+          palette: '',
+        }
+        input.value = values[name] ?? ''
+        setInvalid(name === 'invalid' || name === 'failed')
+        if (mode === 'palette') {
+          const q = input.value.trim().toLowerCase()
+          items = COMMANDS.filter(
+            (item) =>
+              !q || item.name.toLowerCase().includes(q) || item.shortcut.toLowerCase().includes(q),
+          ).map((item) => ({
+            id: item.name,
+            kind: 'command',
+            title: item.name,
+            shortcut: item.shortcut,
+          }))
+          empty.textContent = '没有匹配的命令。'
+          renderFoot('Esc 关闭 · ⌘L 打开地址条')
+        } else {
+          items = buildOmnibarItems(input.value, {
+            forceError: name === 'invalid',
+            loading: name === 'loading',
+            failed: name === 'failed',
+          })
+          empty.textContent = '没有匹配的场景。补全 HTTPS 地址后回车。'
+          renderFoot('Esc 关闭 · ⌘⇧P 命令 · 仅 HTTPS')
+        }
+        active = 0
+        renderList()
+        if (name !== 'loading') {
+          input.focus()
+          if (name === 'idle') input.select()
+        }
+      }
+
+      function liveFilter() {
+        if (mode === 'surface' || snapshot === 'loading' || snapshot === 'failed') return
+        setInvalid(false)
+        if (mode === 'palette') {
+          const q = input.value.trim().toLowerCase()
+          items = COMMANDS.filter(
+            (item) =>
+              !q || item.name.toLowerCase().includes(q) || item.shortcut.toLowerCase().includes(q),
+          ).map((item) => ({
+            id: item.name,
+            kind: 'command',
+            title: item.name,
+            shortcut: item.shortcut,
+          }))
+          empty.textContent = '没有匹配的命令。'
+          active = 0
+          renderList()
+          return
+        }
+        items = buildOmnibarItems(input.value)
+        setInvalid(items.some((item) => item.kind === 'error'))
+        empty.textContent = '没有匹配的场景。补全 HTTPS 地址后回车。'
+        active = 0
+        renderList()
+      }
+
+      stateButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          stateButtons.forEach((item) => item.setAttribute('aria-pressed', String(item === button)))
+          applySnapshot(button.dataset.state)
+        })
+      })
+
+      sizeButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          sizeButtons.forEach((item) => item.setAttribute('aria-pressed', String(item === button)))
+          windowEl.classList.toggle('is-narrow', button.dataset.size === 'narrow')
+        })
+      })
+
+      input.addEventListener('input', liveFilter)
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault()
+          active = (active + 1) % Math.max(items.length, 1)
+          renderList()
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault()
+          active = (active - 1 + items.length) % Math.max(items.length, 1)
+          renderList()
+        } else if (event.key === 'Enter') {
+          event.preventDefault()
+          const item = items[active]
+          if (item?.kind === 'error') return
+          applySnapshot(item?.kind === 'go' || item?.kind === 'scene' ? 'loading' : snapshot)
+        } else if (event.key === 'Escape') {
+          event.preventDefault()
+        } else if (event.key === 'Tab' && items[active]?.subtitle) {
+          event.preventDefault()
+          input.value = items[active].subtitle
+          liveFilter()
+        }
+      })
+
+      applySnapshot('idle')
+    </script>
+  </body>
+</html>

@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>甲乙丙对照 · 空态 + 三条建议</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #d8d4c8;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          -apple-system,
+          sans-serif;
+      }
+      body {
+        padding: 32px 24px 48px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        color: #1c1c1e;
+        font-size: 16px;
+      }
+      p {
+        margin: 0 0 24px;
+        color: #6e6e73;
+        font-size: 13px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 640px);
+        gap: 28px;
+        justify-content: start;
+      }
+      .col {
+        width: 640px;
+      }
+      .caption {
+        margin: 0 0 10px;
+        color: #1c1c1e;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .caption span {
+        display: block;
+        margin-top: 2px;
+        color: #6e6e73;
+        font-weight: 400;
+      }
+      .scene {
+        position: relative;
+        height: 360px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 20% 0, rgb(108 205 155 / 22%), transparent 18rem), #f4f4f6;
+        border-radius: 8px;
+      }
+      .scene em {
+        position: absolute;
+        right: 16px;
+        bottom: 12px;
+        color: #6e6e73;
+        font-size: 11px;
+        font-style: normal;
+      }
+      .panel {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 36px;
+        overflow: hidden;
+      }
+      .drag {
+        height: 10px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 28px 28px 28px minmax(0, 1fr) 28px;
+        gap: 6px;
+        align-items: center;
+        padding: 0 8px 8px;
+      }
+      .ico {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        font-size: 14px;
+        opacity: 0.55;
+      }
+      .field {
+        height: 36px;
+        padding: 0 10px;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 36px;
+        border-radius: 8px;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+      .opt {
+        display: grid;
+        min-height: 40px;
+        padding: 4px 20px;
+        align-content: center;
+      }
+      .opt strong {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 18px;
+      }
+      .opt small {
+        display: block;
+        font-size: 11px;
+        line-height: 16px;
+      }
+      .foot {
+        display: flex;
+        gap: 14px;
+        min-height: 28px;
+        padding: 0 14px 8px;
+        font-size: 11px;
+      }
+      .jia {
+        color: #f5f5f7;
+        background: rgb(20 20 22 / 82%);
+        border: 1px solid rgb(255 255 255 / 12%);
+        border-radius: 12px;
+        box-shadow:
+          0 16px 40px rgb(0 0 0 / 45%),
+          inset 0 1px 0 rgb(255 255 255 / 8%);
+        backdrop-filter: blur(24px) saturate(1.1);
+      }
+      .jia .field {
+        color: #f5f5f7;
+        background: rgb(0 0 0 / 32%);
+        border: 1px solid rgb(255 255 255 / 12%);
+      }
+      .jia .opt.active {
+        background: rgb(255 255 255 / 10%);
+        border-radius: 8px;
+        margin: 0 6px;
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+      .jia .opt small,
+      .jia .foot,
+      .jia .ico {
+        color: #a1a1a6;
+      }
+      .yi {
+        color: #f5f5f7;
+        background: #1c1c1e;
+        border: 1px solid rgb(255 255 255 / 14%);
+        border-radius: 12px;
+        box-shadow:
+          0 12px 28px rgb(0 0 0 / 50%),
+          inset 0 1px 0 rgb(255 255 255 / 6%);
+      }
+      .yi .field {
+        color: #f5f5f7;
+        background: #121214;
+        border: 1px solid rgb(255 255 255 / 14%);
+      }
+      .yi .opt.active {
+        background: rgb(255 255 255 / 9%);
+        border-radius: 8px;
+        margin: 0 6px;
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+      .yi .opt small,
+      .yi .foot,
+      .yi .ico {
+        color: #a1a1a6;
+      }
+      .bing {
+        color: #ffffff;
+        background: #000000;
+        border: 1px solid rgb(255 255 255 / 22%);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgb(0 0 0 / 60%);
+      }
+      .bing .field {
+        color: #ffffff;
+        background: #000000;
+        border: 1px solid rgb(255 255 255 / 22%);
+      }
+      .bing .opt.active {
+        background: rgb(255 255 255 / 14%);
+        border-radius: 8px;
+        margin: 0 6px;
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+      .bing .opt small,
+      .bing .foot,
+      .bing .ico {
+        color: #8e8e93;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>同一内容，三套材质</h1>
+    <p>空态：当前 URL 全选 + 三条建议。尺寸 640 宽，行高 40。推荐乙。</p>
+    <div class="grid">
+      <div class="col">
+        <p class="caption">甲 · 玻璃<span>rgb(20 20 22 / 82%) + blur(24px)</span></p>
+        <div class="scene">
+          <article class="panel jia">
+            <div class="drag"></div>
+            <div class="row">
+              <span class="ico">←</span><span class="ico">→</span><span class="ico">↻</span>
+              <div class="field">https://notes.example/now</div>
+              <span class="ico">×</span>
+            </div>
+            <div class="opt active">
+              <strong>当前场景</strong><small>https://notes.example/now</small>
+            </div>
+            <div class="opt"><strong>写作索引</strong><small>https://notes.example/</small></div>
+            <div class="opt">
+              <strong>Foscen 仓库</strong><small>https://github.com/ConteMan/foscen</small>
+            </div>
+            <div class="foot"><span>Esc 关闭</span><span>⌘⇧P 命令</span><span>仅 HTTPS</span></div>
+          </article>
+          <em>scene</em>
+        </div>
+      </div>
+      <div class="col">
+        <p class="caption">乙 · 实色（推荐）<span>#1C1C1E · 无 blur · 1px 描边</span></p>
+        <div class="scene">
+          <article class="panel yi">
+            <div class="drag"></div>
+            <div class="row">
+              <span class="ico">←</span><span class="ico">→</span><span class="ico">↻</span>
+              <div class="field">https://notes.example/now</div>
+              <span class="ico">×</span>
+            </div>
+            <div class="opt active">
+              <strong>当前场景</strong><small>https://notes.example/now</small>
+            </div>
+            <div class="opt"><strong>写作索引</strong><small>https://notes.example/</small></div>
+            <div class="opt">
+              <strong>Foscen 仓库</strong><small>https://github.com/ConteMan/foscen</small>
+            </div>
+            <div class="foot"><span>Esc 关闭</span><span>⌘⇧P 命令</span><span>仅 HTTPS</span></div>
+          </article>
+          <em>scene</em>
+        </div>
+      </div>
+      <div class="col">
+        <p class="caption">丙 · 硬边纯黑<span>#000000 · 无 blur · 对比最高</span></p>
+        <div class="scene">
+          <article class="panel bing">
+            <div class="drag"></div>
+            <div class="row">
+              <span class="ico">←</span><span class="ico">→</span><span class="ico">↻</span>
+              <div class="field">https://notes.example/now</div>
+              <span class="ico">×</span>
+            </div>
+            <div class="opt active">
+              <strong>当前场景</strong><small>https://notes.example/now</small>
+            </div>
+            <div class="opt"><strong>写作索引</strong><small>https://notes.example/</small></div>
+            <div class="opt">
+              <strong>Foscen 仓库</strong><small>https://github.com/ConteMan/foscen</small>
+            </div>
+            <div class="foot"><span>Esc 关闭</span><span>⌘⇧P 命令</span><span>仅 HTTPS</span></div>
+          </article>
+          <em>scene</em>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

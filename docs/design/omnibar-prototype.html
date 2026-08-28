@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Foscen 覆盖层原型</title>
+    <style>
+      :root {
+        font-family:
+          Inter,
+          ui-sans-serif,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        --text: #f5f5f7;
+        --muted: #a1a1a6;
+        --dim: #6e6e73;
+        --panel: rgb(20 20 22 / 82%);
+        --blur: blur(24px) saturate(1.1);
+        --border: 1px solid rgb(255 255 255 / 12%);
+        --radius: 12px;
+        --shadow: 0 16px 40px rgb(0 0 0 / 45%);
+        --inset: inset 0 1px 0 rgb(255 255 255 / 8%);
+        --input-bg: rgb(0 0 0 / 32%);
+        --input-border: rgb(255 255 255 / 12%);
+        --option: rgb(255 255 255 / 10%);
+        --line: rgb(255 255 255 / 8%);
+        --primary: #f5f5f7;
+        --primary-ink: #131315;
+        --focus-ring: rgb(255 255 255 / 70%);
+        --error-border: rgb(255 255 255 / 32%);
+      }
+      [data-style='yi'] {
+        --panel: #1c1c1e;
+        --blur: none;
+        --border: 1px solid rgb(255 255 255 / 14%);
+        --shadow: 0 12px 28px rgb(0 0 0 / 50%);
+        --inset: inset 0 1px 0 rgb(255 255 255 / 6%);
+        --input-bg: #121214;
+        --input-border: rgb(255 255 255 / 14%);
+        --option: rgb(255 255 255 / 9%);
+        --line: rgb(255 255 255 / 8%);
+        --primary: #f5f5f7;
+        --primary-ink: #1c1c1e;
+      }
+      [data-style='bing'] {
+        --text: #ffffff;
+        --muted: #8e8e93;
+        --panel: #000000;
+        --blur: none;
+        --border: 1px solid rgb(255 255 255 / 22%);
+        --radius: 8px;
+        --shadow: 0 8px 24px rgb(0 0 0 / 60%);
+        --inset: none;
+        --input-bg: #000000;
+        --input-border: rgb(255 255 255 / 22%);
+        --option: rgb(255 255 255 / 14%);
+        --line: rgb(255 255 255 / 14%);
+        --primary: #ffffff;
+        --primary-ink: #000000;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        background: #0a0a0b;
+      }
+      .tools {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        padding: 12px 16px;
+        color: #a1a1a6;
+        font-size: 12px;
+        background: #121214;
+        border-bottom: 1px solid rgb(255 255 255 / 8%);
+      }
+      .tools button {
+        min-height: 28px;
+        padding: 0 10px;
+        color: inherit;
+        font: inherit;
+        background: transparent;
+        border: 1px solid rgb(255 255 255 / 12%);
+        border-radius: 999px;
+      }
+      .tools button[aria-pressed='true'] {
+        color: #0a0a0b;
+        font-weight: 600;
+        background: #f5f5f7;
+        border-color: transparent;
+      }
+      .note {
+        padding: 10px 16px;
+        color: #a1a1a6;
+        font-size: 13px;
+        border-bottom: 1px solid rgb(255 255 255 / 8%);
+      }
+      .stage {
+        display: grid;
+        place-items: center;
+        padding: 24px 12px 40px;
+      }
+      .window {
+        position: relative;
+        width: min(100%, 1280px);
+        height: 800px;
+        max-height: 72vh;
+        overflow: hidden;
+        background: #26262a;
+        border-radius: 10px;
+      }
+      .window.is-narrow {
+        width: 520px;
+        height: 640px;
+      }
+      .window.is-short {
+        width: min(100%, 1280px);
+        height: 400px;
+      }
+      .scene {
+        position: absolute;
+        inset: 10px;
+        padding: 24px 40px;
+        color: #1c1c1e;
+        background:
+          radial-gradient(circle at 18% 0, rgb(108 205 155 / 20%), transparent 16rem), #f4f4f6;
+        border-radius: 8px;
+      }
+      .overlay {
+        position: absolute;
+        left: 50%;
+        top: 112px;
+        width: 640px;
+        max-width: calc(100% - 48px);
+        overflow: hidden;
+        color: var(--text);
+        background: var(--panel);
+        border: var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow), var(--inset);
+        backdrop-filter: var(--blur);
+        transform: translateX(-50%);
+      }
+      .window.is-short .overlay {
+        top: 24px;
+      }
+      .overlay.is-surface {
+        top: 80px;
+        width: 720px;
+        max-height: 420px;
+      }
+      .drag {
+        height: 10px;
+      }
+      .input-row {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) 28px;
+        gap: 6px;
+        align-items: center;
+        padding: 0 8px 8px;
+      }
+      .nav {
+        display: flex;
+        gap: 2px;
+      }
+      .window.is-narrow .nav [data-hide-narrow] {
+        display: none;
+      }
+      .icon-btn {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        color: inherit;
+        place-items: center;
+        background: transparent;
+        border: 0;
+        border-radius: 8px;
+      }
+      .field {
+        display: flex;
+        align-items: center;
+        height: 36px;
+        padding: 0 10px;
+        background: var(--input-bg);
+        border: 1px solid var(--input-border);
+        border-radius: 8px;
+      }
+      .field.is-invalid {
+        border-color: var(--error-border);
+      }
+      .field input {
+        width: 100%;
+        height: 34px;
+        padding: 0;
+        color: var(--text);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        background: transparent;
+        border: 0;
+        outline: none;
+      }
+      .option {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        min-height: 40px;
+        padding: 0 12px;
+        border-radius: 8px;
+      }
+      .option[aria-selected='true'] {
+        background: var(--option);
+      }
+      .option.is-error {
+        color: var(--text);
+      }
+      .option .copy strong {
+        display: block;
+        font-size: 13px;
+        line-height: 18px;
+      }
+      .option .copy span,
+      .foot,
+      kbd,
+      .empty {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 16px;
+      }
+      .empty {
+        padding: 10px 16px 12px;
+        font-size: 12px;
+      }
+      kbd {
+        padding: 1px 5px;
+        font-family: inherit;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+      }
+      .foot {
+        display: flex;
+        gap: 14px;
+        min-height: 28px;
+        padding: 0 14px 8px;
+        color: var(--dim);
+      }
+      .spin {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgb(255 255 255 / 18%);
+        border-top-color: var(--text);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .surface-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 8px;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 8px;
+        border-bottom: 1px solid var(--line);
+      }
+      .brand {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .tabs {
+        display: flex;
+        gap: 4px;
+        padding: 0 8px;
+        border-bottom: 1px solid var(--line);
+      }
+      .tabs button {
+        height: 34px;
+        padding: 0 12px;
+        color: var(--muted);
+        font: inherit;
+        font-size: 12px;
+        background: transparent;
+        border: 0;
+        border-bottom: 2px solid transparent;
+      }
+      .tabs button[aria-selected='true'] {
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+        border-bottom-color: var(--text);
+      }
+      .surface-body {
+        padding: 16px;
+      }
+      .inline {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .inline input {
+        flex: 1;
+        height: 36px;
+        padding: 0 10px;
+        color: var(--text);
+        font: inherit;
+        background: var(--input-bg);
+        border: 1px solid var(--input-border);
+        border-radius: 8px;
+      }
+      .primary {
+        height: 36px;
+        padding: 0 12px;
+        color: var(--primary-ink);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        background: var(--primary);
+        border: 0;
+        border-radius: 8px;
+      }
+      .card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 48px;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--focus-ring);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body data-style="yi">
+    <div class="tools" role="toolbar">
+      <strong>风格</strong>
+      <button type="button" data-style-btn="jia">甲 玻璃</button>
+      <button type="button" data-style-btn="yi" aria-pressed="true">乙 实色</button>
+      <button type="button" data-style-btn="bing">丙 纸感</button>
+      <strong>状态</strong>
+      <button type="button" data-state="idle" aria-pressed="true">空态</button>
+      <button type="button" data-state="typing">输入中</button>
+      <button type="button" data-state="matches">有建议</button>
+      <button type="button" data-state="empty">无结果</button>
+      <button type="button" data-state="invalid">非法</button>
+      <button type="button" data-state="loading">加载中</button>
+      <button type="button" data-state="failed">错误</button>
+      <button type="button" data-state="palette">命令面板</button>
+      <button type="button" data-state="surface">工作面</button>
+      <strong>窗口</strong>
+      <button type="button" data-win="wide" aria-pressed="true">1280</button>
+      <button type="button" data-win="narrow">宽&lt;520</button>
+      <button type="button" data-win="short">高&lt;400</button>
+    </div>
+    <p class="note">
+      评审工具不是产品 UI。IA 已锁定。默认乙·实色。窄窗隐藏前进/后退；短窗 y=24、最多 4 行。
+    </p>
+    <div class="stage">
+      <div class="window" data-window>
+        <section class="scene">
+          <p style="font-size: 11px; letter-spacing: 0.16em; color: #377657">FOCUS + SCENE</p>
+          <h2 style="font-size: 40px; letter-spacing: -0.04em">网页还在。</h2>
+        </section>
+        <div class="overlay" data-overlay role="dialog" aria-label="打开场景">
+          <div data-omnibar-root>
+            <div class="drag"></div>
+            <div class="input-row">
+              <div class="nav" data-nav>
+                <button class="icon-btn" data-hide-narrow disabled aria-label="后退">←</button>
+                <button class="icon-btn" data-hide-narrow disabled aria-label="前进">→</button>
+                <button class="icon-btn" data-reload aria-label="刷新">↻</button>
+              </div>
+              <label class="field" data-field>
+                <input
+                  id="q"
+                  autocomplete="off"
+                  spellcheck="false"
+                  role="combobox"
+                  aria-expanded="true"
+                  aria-autocomplete="list"
+                  placeholder="输入 HTTPS 地址或搜索场景"
+                />
+              </label>
+              <button class="icon-btn" type="button" aria-label="关闭">×</button>
+            </div>
+            <div id="list"></div>
+            <div class="empty" data-empty hidden></div>
+            <div class="foot" data-foot></div>
+          </div>
+          <div data-surface-root hidden>
+            <div class="surface-header">
+              <div class="brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M5 9V6.5A1.5 1.5 0 0 1 6.5 5H9M15 5h2.5A1.5 1.5 0 0 1 19 6.5V9M19 15v2.5A1.5 1.5 0 0 1 17.5 19H15M9 19H6.5A1.5 1.5 0 0 1 5 17.5V15"
+                    fill="none"
+                    stroke="#F5F5F7"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                  <rect x="8" y="8" width="8" height="8" rx="2" fill="#F5F5F7" />
+                </svg>
+                场景
+              </div>
+              <span></span>
+              <button class="icon-btn" type="button" aria-label="关闭">×</button>
+            </div>
+            <div class="tabs" role="tablist">
+              <button type="button" aria-selected="true">场景</button>
+              <button type="button" aria-selected="false">下载</button>
+              <button type="button" aria-selected="false">设置</button>
+            </div>
+            <div class="surface-body">
+              <form class="inline" onsubmit="return false">
+                <input placeholder="给当前网页起个名字" maxlength="120" />
+                <button class="primary" type="button">保存当前场景</button>
+              </form>
+              <article class="card">
+                <div>
+                  <strong>写作索引</strong>
+                  <div class="option copy"><span>https://notes.example/</span></div>
+                </div>
+                <button class="primary" type="button">打开</button>
+              </article>
+              <p class="foot" style="padding-left: 0">Esc 返回网页 · 地址请用 ⌘L</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const CURRENT = 'https://notes.example/now'
+      const SCENES = [
+        { name: '写作索引', url: 'https://notes.example/' },
+        { name: 'Foscen 仓库', url: 'https://github.com/ConteMan/foscen' },
+        { name: '项目板', url: 'https://board.example/now' },
+        { name: '阅读列表', url: 'https://read.example/today' },
+      ]
+      const COMMANDS = [
+        ['打开网页', '⌘ L'],
+        ['保存截图', '⌘ ⇧ S'],
+        ['保存场景', '⌘ S'],
+        ['下载', '⌘ J'],
+        ['设置', '⌘ ,'],
+        ['检查更新', '⌘ U'],
+      ]
+      const q = document.querySelector('#q')
+      const list = document.querySelector('#list')
+      const empty = document.querySelector('[data-empty]')
+      const foot = document.querySelector('[data-foot]')
+      const field = document.querySelector('[data-field]')
+      const overlay = document.querySelector('[data-overlay]')
+      const omnibar = document.querySelector('[data-omnibar-root]')
+      const surface = document.querySelector('[data-surface-root]')
+      const win = document.querySelector('[data-window]')
+      const nav = document.querySelector('[data-nav]')
+      let mode = 'omnibar'
+      let items = []
+      let active = 0
+      const maxRows = () => (win.classList.contains('is-short') ? 4 : 6)
+
+      function normalize(raw) {
+        const t = raw.trim()
+        if (!t) return { ok: false, reason: 'empty' }
+        if (/^https:\/\//i.test(t)) {
+          try {
+            const u = new URL(t)
+            if (u.username || u.password) return { ok: false, reason: 'https' }
+            return { ok: true, href: u.href }
+          } catch {
+            return { ok: false, reason: 'invalid' }
+          }
+        }
+        if (/^[a-z][a-z\d+.-]*:/i.test(t)) return { ok: false, reason: 'https' }
+        try {
+          return { ok: true, href: new URL('https://' + t).href }
+        } catch {
+          return { ok: false, reason: 'invalid' }
+        }
+      }
+      function idleQuery(query) {
+        const p = normalize(query)
+        return !query.trim() || (p.ok && p.href === CURRENT)
+      }
+      function rowsFor(query, flags = {}) {
+        if (flags.loading) return [{ kind: 'status', title: '正在打开网页', sub: query }]
+        if (flags.failed)
+          return [{ kind: 'error', title: '页面加载失败，请检查网络或地址', sub: query }]
+        const p = normalize(query)
+        if (flags.forceError || p.reason === 'https')
+          return [
+            { kind: 'error', title: '仅支持 HTTPS 网页地址', sub: 'http、本地文件和凭据会被拒绝' },
+          ]
+        const out = []
+        const idle = idleQuery(query)
+        if (!idle && p.ok && p.href !== CURRENT)
+          out.push({ kind: 'go', title: '前往', sub: p.href })
+        if (idle || CURRENT.toLowerCase().includes(query.trim().toLowerCase()))
+          out.push({ kind: 'current', title: '当前场景', sub: CURRENT })
+        const qv = query.trim().toLowerCase()
+        for (const s of SCENES) {
+          if (s.url === CURRENT) continue
+          if (idle || `${s.name} ${s.url}`.toLowerCase().includes(qv))
+            out.push({ kind: 'scene', title: s.name, sub: s.url })
+          if (out.filter((r) => r.kind === 'scene').length >= maxRows()) break
+        }
+        return out
+      }
+      function paint() {
+        list.replaceChildren()
+        empty.hidden = items.length > 0
+        list.hidden = items.length === 0
+        items.slice(0, maxRows()).forEach((item, i) => {
+          const el = document.createElement('div')
+          el.className = 'option' + (item.kind === 'error' ? ' is-error' : '')
+          el.setAttribute('role', 'option')
+          el.setAttribute('aria-selected', String(i === active))
+          el.innerHTML = `<span></span><span class="copy"><strong></strong><span></span></span>`
+          el.querySelector('strong').textContent = item.title
+          el.querySelector('.copy span').textContent = item.sub || item.shortcut || ''
+          if (item.shortcut) {
+            const k = document.createElement('kbd')
+            k.textContent = item.shortcut
+            el.append(k)
+          }
+          list.append(el)
+        })
+      }
+      function apply(name) {
+        mode = name === 'palette' ? 'palette' : name === 'surface' ? 'surface' : 'omnibar'
+        overlay.classList.toggle('is-surface', mode === 'surface')
+        omnibar.hidden = mode === 'surface'
+        surface.hidden = mode !== 'surface'
+        nav.hidden = mode !== 'omnibar'
+        if (mode === 'surface') return
+        q.readOnly = name === 'loading'
+        field.classList.toggle('is-invalid', name === 'invalid' || name === 'failed')
+        const values = {
+          idle: CURRENT,
+          typing: 'fos',
+          matches: 'github',
+          empty: 'foo bar',
+          invalid: 'http://example.com',
+          loading: 'https://github.com/ConteMan/foscen',
+          failed: 'https://offline.example/',
+          palette: '',
+        }
+        q.value = values[name] ?? ''
+        q.placeholder = mode === 'palette' ? '搜索命令' : '输入 HTTPS 地址或搜索场景'
+        if (mode === 'palette') {
+          items = COMMANDS.map(([title, shortcut]) => ({ kind: 'command', title, shortcut }))
+          empty.textContent = '没有匹配的命令。'
+          foot.textContent = ''
+          ;['Esc 关闭', '⌘L 打开地址条'].forEach((t) => {
+            const s = document.createElement('span')
+            s.textContent = t
+            foot.append(s)
+          })
+        } else {
+          items = rowsFor(q.value, {
+            forceError: name === 'invalid',
+            loading: name === 'loading',
+            failed: name === 'failed',
+          })
+          empty.textContent = '没有匹配的场景。补全 HTTPS 地址后回车。'
+          foot.replaceChildren()
+          ;['Esc 关闭', '⌘⇧P 命令', '仅 HTTPS'].forEach((t) => {
+            const s = document.createElement('span')
+            s.textContent = t
+            foot.append(s)
+          })
+        }
+        active = 0
+        paint()
+        if (name !== 'loading') q.focus()
+      }
+      document.querySelectorAll('[data-style-btn]').forEach((b) => {
+        b.addEventListener('click', () => {
+          document.body.dataset.style = b.dataset.styleBtn
+          document
+            .querySelectorAll('[data-style-btn]')
+            .forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+        })
+      })
+      document.querySelectorAll('[data-state]').forEach((b) => {
+        b.addEventListener('click', () => {
+          document
+            .querySelectorAll('[data-state]')
+            .forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+          apply(b.dataset.state)
+        })
+      })
+      document.querySelectorAll('[data-win]').forEach((b) => {
+        b.addEventListener('click', () => {
+          document
+            .querySelectorAll('[data-win]')
+            .forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+          win.classList.toggle('is-narrow', b.dataset.win === 'narrow')
+          win.classList.toggle('is-short', b.dataset.win === 'short')
+          paint()
+        })
+      })
+      q.addEventListener('input', () => {
+        if (mode === 'surface') return
+        if (mode === 'palette') {
+          const v = q.value.trim().toLowerCase()
+          items = COMMANDS.filter(
+            (c) => c[0].toLowerCase().includes(v) || c[1].toLowerCase().includes(v),
+          ).map(([title, shortcut]) => ({ kind: 'command', title, shortcut }))
+        } else {
+          items = rowsFor(q.value)
+          field.classList.toggle(
+            'is-invalid',
+            items.some((i) => i.kind === 'error'),
+          )
+        }
+        active = 0
+        paint()
+      })
+      apply('idle')
+    </script>
+  </body>
+</html>

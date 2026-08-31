@@ -32,7 +32,7 @@ jobs:
   release:
     name: sign-notarize-publish
     needs: quality
-    runs-on: macos-15-intel
+    runs-on: macos-15-xlarge
     timeout-minutes: 60
     environment: macos-release
     permissions:
@@ -76,7 +76,7 @@ jobs:
           security import "$FOSCEN_CERTIFICATE_PATH" -k "$FOSCEN_KEYCHAIN" -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$FOSCEN_KEYCHAIN"
           security list-keychains -d user -s "$FOSCEN_KEYCHAIN"
-      - name: Build and verify signed universal artifacts
+      - name: Build and verify signed arm64 artifacts
         env:
           FOSCEN_RELEASE: '1'
           APPLE_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}

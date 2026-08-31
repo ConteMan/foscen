@@ -14,6 +14,12 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  # 两个 job 共用同一个目标 tag：workflow_dispatch 手动重跑时使用输入的 tag；
+  # tag push 触发时 inputs.tag 为空，回退到触发 ref 名（即被推送的 tag）。
+  # 定义在 workflow 级，quality 与 release job 检出同一份代码，避免门禁与实际发布的产物不一致。
+  RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
 jobs:
   quality:
     name: quality-gate
@@ -25,6 +31,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ env.RELEASE_TAG }}
           persist-credentials: false
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -42,9 +49,6 @@ jobs:
     environment: macos-release
     permissions:
       contents: write
-    env:
-      # workflow_dispatch 手动重跑时使用输入的 tag；tag push 触发时 inputs.tag 为空，回退到触发 ref 名（即被推送的 tag）
-      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       - name: Prepare credential paths
         run: |

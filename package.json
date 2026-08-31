@@ -1,7 +1,7 @@
 {
   "name": "foscen",
   "productName": "Foscen",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "description": "A focused, keyboard-first desktop container for web scenes.",
   "license": "MIT",

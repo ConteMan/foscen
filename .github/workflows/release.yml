@@ -3,6 +3,12 @@ name: Release macOS
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '手动重跑发布时必填：已存在的发布 tag，例如 v1.2.3'
+        required: true
+        type: string
 
 concurrency:
   group: release-${{ github.ref }}
@@ -33,11 +39,12 @@ jobs:
     name: sign-notarize-publish
     needs: quality
     runs-on: macos-15
-    # Apple 公证排队时长不可控，新账号首次提交尤其慢，提高超时避免丢弃已签名产物
-    timeout-minutes: 120
     environment: macos-release
     permissions:
       contents: write
+    env:
+      # workflow_dispatch 手动重跑时使用输入的 tag；tag push 触发时 inputs.tag 为空，回退到触发 ref 名（即被推送的 tag）
+      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       - name: Prepare credential paths
         run: |
@@ -47,6 +54,7 @@ jobs:
       - name: Checkout release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ env.RELEASE_TAG }}
           fetch-depth: 0
           persist-credentials: false
       - name: Setup Node.js
@@ -81,6 +89,7 @@ jobs:
       - name: Build and verify signed arm64 artifacts
         env:
           FOSCEN_RELEASE: '1'
+          FOSCEN_RELEASE_TAG: ${{ env.RELEASE_TAG }}
           APPLE_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
@@ -96,10 +105,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          EXISTING_DRAFT="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$GITHUB_REF_NAME" --jq .draft 2>/dev/null || true)"
+          EXISTING_DRAFT="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .draft 2>/dev/null || true)"
           if [[ "$EXISTING_DRAFT" == "false" ]]; then
-            echo "Release $GITHUB_REF_NAME 已公开，拒绝覆盖现有资产" >&2
+            echo "Release $RELEASE_TAG 已公开，拒绝覆盖现有资产" >&2
             exit 1
           fi
           pnpm run release:upload:mac
-          gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false

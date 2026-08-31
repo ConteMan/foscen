@@ -30,12 +30,15 @@ const apiKeyPath = requireEnvironment('APPLE_API_KEY')
 const apiKeyId = requireEnvironment('APPLE_API_KEY_ID')
 const apiIssuer = requireEnvironment('APPLE_API_ISSUER')
 
-const releaseTag = process.env.GITHUB_REF_NAME?.trim() || process.env.FOSCEN_RELEASE_TAG?.trim()
+// FOSCEN_RELEASE_TAG 由 workflow_dispatch 手动重跑传入，优先于 GITHUB_REF_NAME：
+// 手动触发时 GITHUB_REF_NAME/GITHUB_REF_TYPE 反映的是运行工作流的分支，而非目标发布 tag
+const manualReleaseTag = process.env.FOSCEN_RELEASE_TAG?.trim()
+const releaseTag = manualReleaseTag || process.env.GITHUB_REF_NAME?.trim()
 const expectedTag = `v${packageJson.version}`
 if (releaseTag !== expectedTag) {
   failures.push(`发布 tag 必须等于 ${expectedTag}，当前为 ${releaseTag || '空'}`)
 }
-if (process.env.GITHUB_REF_TYPE && process.env.GITHUB_REF_TYPE !== 'tag') {
+if (!manualReleaseTag && process.env.GITHUB_REF_TYPE && process.env.GITHUB_REF_TYPE !== 'tag') {
   failures.push('GitHub 发布只能从 tag ref 执行')
 }
 try {

@@ -37,11 +37,12 @@ jobs:
     environment: macos-release
     permissions:
       contents: write
-    env:
-      APPLE_API_KEY: ${{ runner.temp }}/foscen-notary-key.p8
-      FOSCEN_CERTIFICATE_PATH: ${{ runner.temp }}/foscen-signing.p12
-      FOSCEN_KEYCHAIN: ${{ runner.temp }}/foscen-signing.keychain-db
     steps:
+      - name: Prepare credential paths
+        run: |
+          echo "APPLE_API_KEY=$RUNNER_TEMP/foscen-notary-key.p8" >> "$GITHUB_ENV"
+          echo "FOSCEN_CERTIFICATE_PATH=$RUNNER_TEMP/foscen-signing.p12" >> "$GITHUB_ENV"
+          echo "FOSCEN_KEYCHAIN=$RUNNER_TEMP/foscen-signing.keychain-db" >> "$GITHUB_ENV"
       - name: Checkout release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

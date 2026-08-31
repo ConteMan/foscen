@@ -33,7 +33,8 @@ jobs:
     name: sign-notarize-publish
     needs: quality
     runs-on: macos-15
-    timeout-minutes: 60
+    # Apple 公证排队时长不可控，新账号首次提交尤其慢，提高超时避免丢弃已签名产物
+    timeout-minutes: 120
     environment: macos-release
     permissions:
       contents: write

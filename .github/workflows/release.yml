@@ -32,7 +32,7 @@ jobs:
   release:
     name: sign-notarize-publish
     needs: quality
-    runs-on: macos-15-xlarge
+    runs-on: macos-15
     timeout-minutes: 60
     environment: macos-release
     permissions:

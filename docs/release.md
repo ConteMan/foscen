@@ -28,7 +28,7 @@ ZIP 名称符合 Electron 官方更新服务的 macOS 规则：包含 `-darwin`�
 
 `.github/workflows/release.yml` 只响应 `v*` tag。独立质量任务先在只读权限、无 Apple 凭据的环境运行完整门禁；发布任务再进入受保护的 `macos-release` environment，先安装与构建，之后才导入临时 keychain/P8，完成 Developer ID 签名、Apple notarytool 公证和制品验证。资产上传期间 Release 保持 draft，全部上传成功后才切换为公开、非 prerelease。
 
-发布固定使用显式的 arm64 runner 标签 `macos-15-xlarge`，而不是可能随默认架构漂移的 `macos-15` 别名；产物只包含 arm64，不再合并 x86_64。
+发布固定使用版本固定的标准 runner 标签 `macos-15`：它本身即 arm64，公开仓库使用免费。不用 `macos-latest`，因为它会随 GitHub 默认系统版本漂移；也不用 `macos-15-xlarge` 等大型 runner，因为大型 runner 即使在公开仓库也单独计费。
 
 `macos-release` environment 的 Actions secrets：
 

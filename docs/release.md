@@ -4,7 +4,7 @@
 
 ## 本地打包
 
-要求 macOS、Node.js 24.x、pnpm 11.13.1。没有 Apple 证书时仍可生成未签名 universal 应用和安装制品：
+要求 macOS、Node.js 24.x、pnpm 11.13.1。没有 Apple 证书时仍可生成未签名 arm64 应用和安装制品：
 
 ```bash
 pnpm install --frozen-lockfile
@@ -16,19 +16,19 @@ pnpm run verify:package
 
 输出位于 `out/`：
 
-- `Foscen.app`：arm64 与 x86_64 universal 应用；
-- `Foscen-<version>-universal.dmg`：面向用户安装；
-- `Foscen-darwin-universal-<version>.zip`：GitHub 公共更新服务所需的 macOS 更新载荷。
+- `Foscen.app`：arm64 应用；
+- `Foscen-<version>-arm64.dmg`：面向用户安装；
+- `Foscen-darwin-arm64-<version>.zip`：GitHub 公共更新服务所需的 macOS 更新载荷。
 
 验证脚本检查 bundle id `com.conteman.foscen`、版本、隐私用途说明、asar、架构、打包应用的可信 UI 启动握手及 DMG/ZIP。正式发布模式还会检查 Developer ID 签名、Gatekeeper 和公证票据。
 
-ZIP 名称符合 Electron 官方更新服务的 macOS 规则：包含 `-darwin`、`-universal` 且以 `.zip` 结尾。客户端按实际 `darwin-arm64` 或 `darwin-x64` 请求时，服务会回退到较新的 universal 资产。
+ZIP 名称符合 Electron 官方更新服务的 macOS 规则：包含 `-darwin`、`-arm64` 且以 `.zip` 结尾。客户端按实际 `darwin-arm64` 请求时会命中该资产；未显式含架构标记的资产会被服务按 `-x64` 处理。
 
 ## 正式发布
 
 `.github/workflows/release.yml` 只响应 `v*` tag。独立质量任务先在只读权限、无 Apple 凭据的环境运行完整门禁；发布任务再进入受保护的 `macos-release` environment，先安装与构建，之后才导入临时 keychain/P8，完成 Developer ID 签名、Apple notarytool 公证和制品验证。资产上传期间 Release 保持 draft，全部上传成功后才切换为公开、非 prerelease。
 
-发布固定使用 GitHub 标准 `macos-15-intel` runner 生成 universal 包，避免 `macos-15` 随当前 arm64 runner 别名变化；Intel runner 仍会由 Electron Packager 合并 arm64 与 x86_64 应用。
+发布固定使用版本固定的标准 runner 标签 `macos-15`：它本身即 arm64，公开仓库使用免费。不用 `macos-latest`，因为它会随 GitHub 默认系统版本漂移；也不用 `macos-15-xlarge` 等大型 runner，因为大型 runner 即使在公开仓库也单独计费。
 
 `macos-release` environment 的 Actions secrets：
 

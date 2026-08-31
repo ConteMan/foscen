@@ -96,7 +96,7 @@ const signingContracts = [
   ['Foscen.app/Contents/Frameworks/Electron Framework.framework', 'entitlements.helper.plist'],
 ]
 for (const [relativeFile, entitlementsFile] of signingContracts) {
-  const file = join(root, 'out', 'Foscen-darwin-universal', relativeFile)
+  const file = join(root, 'out', 'Foscen-darwin-arm64', relativeFile)
   const signingOptions = config.__signOptionsForFile?.(file)
   assert(
     signingOptions?.entitlements === join(root, 'build', entitlementsFile),
@@ -165,14 +165,14 @@ assert(!lockfile.includes('github.com/electron/node-gyp.git'), '锁文件不得�
 
 if (process.argv.includes('--artifacts')) {
   const outFiles = filesBelow(join(root, 'out'))
-  const appPath = join(root, 'out', 'Foscen-darwin-universal', 'Foscen.app')
+  const appPath = join(root, 'out', 'Foscen-darwin-arm64', 'Foscen.app')
   const infoPlist = join(appPath, 'Contents', 'Info.plist')
   const executable = join(appPath, 'Contents', 'MacOS', 'Foscen')
   const asar = join(appPath, 'Contents', 'Resources', 'app.asar')
   const dmgs = outFiles.filter((file) => extname(file) === '.dmg')
   const zips = outFiles.filter((file) => extname(file) === '.zip')
 
-  assert(existsSync(appPath), '缺少 universal Foscen.app')
+  assert(existsSync(appPath), '缺少 arm64 Foscen.app')
   assert(existsSync(infoPlist), '缺少应用 Info.plist')
   assert(existsSync(executable), '缺少应用主可执行文件')
   assert(existsSync(asar), '缺少 app.asar')
@@ -186,20 +186,17 @@ if (process.argv.includes('--artifacts')) {
   }
   for (const artifact of dmgs) {
     const name = basename(artifact)
-    assert(
-      name === `Foscen-${packageJson.version}-universal.dmg`,
-      `DMG 名称不符合发布合同：${name}`,
-    )
+    assert(name === `Foscen-${packageJson.version}-arm64.dmg`, `DMG 名称不符合发布合同：${name}`)
     assert(statSync(artifact).size > 1_000_000, `制品异常过小：${name}`)
   }
   for (const artifact of zips) {
     const name = basename(artifact)
     assert(
-      name === `Foscen-darwin-universal-${packageJson.version}.zip`,
+      name === `Foscen-darwin-arm64-${packageJson.version}.zip`,
       `ZIP 名称不符合更新服务合同：${name}`,
     )
     assert(
-      /.*-(?:mac|darwin|osx).*-universal.*\.zip$/i.test(name),
+      /.*-(?:mac|darwin|osx).*-arm64.*\.zip$/i.test(name),
       `ZIP 无法被 update.electronjs.org 识别：${name}`,
     )
     assert(statSync(artifact).size > 1_000_000, `制品异常过小：${name}`)
@@ -229,8 +226,8 @@ if (process.argv.includes('--artifacts')) {
       encoding: 'utf8',
     })
     assert(
-      architectures.includes('arm64') && architectures.includes('x86_64'),
-      '主程序不是 arm64+x86_64 universal',
+      architectures.includes('arm64') && !architectures.includes('x86_64'),
+      '主程序不是 arm64 单架构',
     )
 
     try {
@@ -315,6 +312,6 @@ if (failures.length > 0) {
 
 console.log(
   process.argv.includes('--artifacts')
-    ? '[package] universal 应用、DMG、ZIP 验证通过'
+    ? '[package] arm64 应用、DMG、ZIP 验证通过'
     : '[package] Forge 配置验证通过',
 )

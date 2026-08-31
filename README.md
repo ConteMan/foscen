@@ -40,7 +40,7 @@ pnpm start
 
 门禁覆盖依赖锁定、格式、Lint、类型检查、单元测试、构建和 Electron 启动 smoke。
 
-本地生成未签名的 universal macOS 安装制品：
+本地生成未签名的 arm64 macOS 安装制品：
 
 ```bash
 pnpm run make:mac

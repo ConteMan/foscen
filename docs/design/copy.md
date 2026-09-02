@@ -110,6 +110,16 @@ option 可访问名 = 标题 + 空格 + 副文（URL 或快捷键）。
 | liveScreenshot | 正在保存截图…                      | 命令面板截图进行中                                                |
 | liveReady      | （不显示）                         | 不再用「控制面已就绪」占 header                                   |
 
+## Toast（chrome 隐藏时的截图快捷键反馈）
+
+`⌘⇧S` 在 chrome 隐藏（面板未打开）时触发截图，捕获**完成之后**在 chrome 同一 View 里弹出一枚不抢焦点的 toast，3200ms 后自动消失，期间 Esc 立即关闭；面板真正打开时 toast 让位。若截图完成时面板已经可见（用户在 toast 出现前又打开了面板），沿用面板内既有的状态提示，不再弹 toast。
+
+| id                    | 表面  | 文案                                     | 用途                                                              |
+| --------------------- | ----- | ---------------------------------------- | ----------------------------------------------------------------- |
+| toastDialog           | toast | 截图结果                                 | `aria-label` on toast 容器                                        |
+| toastScreenshotOk     | toast | 复用 `okScreenshot`：已保存：{filename}  | 成功，只显示文件名（basename），不含完整路径                      |
+| toastScreenshotFailed | toast | 复用 `screenshot-service` 抛出的具体原因 | 失败，五种原因各自可区分；图标固定 `alert-triangle`，不靠颜色区分 |
+
 主进程其它结果句保持现网，作短时 status（工作面 header 右侧，3 秒淡出）：
 
 | id                  | 文案                                     |
@@ -121,7 +131,7 @@ option 可访问名 = 标题 + 空格 + 副文（URL 或快捷键）。
 | errSceneOpen        | 无法打开场景                             |
 | okSceneDeleted      | 场景已删除                               |
 | errSceneDelete      | 无法删除场景                             |
-| okScreenshot        | 当前可见网页已保存为 PNG 截图            |
+| okScreenshot        | 已保存：{filename}                       |
 | errScreenshot       | 截图失败                                 |
 | okDownloadAllow     | 下载已允许                               |
 | okDownloadDeny      | 下载已拒绝                               |

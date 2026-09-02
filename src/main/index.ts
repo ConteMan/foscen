@@ -1,4 +1,4 @@
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import {
@@ -18,7 +18,12 @@ import {
   type WebContents,
 } from 'electron'
 
-import { IPC_CHANNELS, type ActionResult, type NavigateResult } from '../shared/ipc.js'
+import {
+  IPC_CHANNELS,
+  type ActionResult,
+  type NavigateResult,
+  type ToastState,
+} from '../shared/ipc.js'
 import type { PermissionRecord } from '../shared/permissions.js'
 import type { Scene } from '../shared/scenes.js'
 import {
@@ -65,6 +70,8 @@ const CURRENT_SCENE_URL_DEBOUNCE_MS = 250
  * 仍可能有一次可见跳变，但这比“再也打不开”好。
  */
 const REVEAL_FALLBACK_MS = 48
+/** 快捷键截图完成后 toast 的展示时长；Esc 可提前关闭。 */
+const TOAST_DURATION_MS = 3200
 const LIGHT_WINDOW_FRAME_COLOR = '#d9dcda'
 const DARK_WINDOW_FRAME_COLOR = '#1c211e'
 
@@ -163,6 +170,8 @@ class FoscenWindow {
   private controlRowCount = 0
   private chromeOpenGeneration = 0
   private revealTimer: NodeJS.Timeout | undefined
+  private toastVisible = false
+  private toastHideTimer: NodeJS.Timeout | undefined
   private readonly rendererReady: Promise<void>
   private resolveRendererReady: (() => void) | undefined
   private boundsTimer: NodeJS.Timeout | undefined
@@ -389,6 +398,7 @@ class FoscenWindow {
   }
 
   showChrome(mode: FocusMode = 'navigate'): void {
+    this.hideToastImmediate()
     const isFreshOpen = !this.chromeVisible
     this.focusMode = mode
     this.controlPresentation = presentationForFocusMode(mode)
@@ -414,6 +424,70 @@ class FoscenWindow {
     this.clearStateSendImmediate()
     this.chromeView.setVisible(false)
     this.sceneView.webContents.focus()
+  }
+
+  /**
+   * chrome 隐藏时快捷键截图完成后的一次性反馈。绝不抢焦点——用户仍在浏览
+   * 网页，`chromeView` 不 `focus()`，只借用它的外壳渲染 toast 内容。
+   */
+  private showToast(toast: ToastState): void {
+    if (this.chromeVisible || this.closing) {
+      return
+    }
+    this.clearToastHideTimer()
+    this.toastVisible = true
+    this.controlPresentation = 'toast'
+    this.controlRowCount = 0
+    this.layout()
+    this.chromeView.setVisible(true)
+    this.chromeView.webContents.send(IPC_CHANNELS.showToast, toast)
+    this.scheduleToastHide()
+  }
+
+  private scheduleToastHide(): void {
+    this.clearToastHideTimer()
+    this.toastHideTimer = setTimeout(() => {
+      this.toastHideTimer = undefined
+      this.hideToast()
+    }, TOAST_DURATION_MS)
+    // 必须保持强引用，理由同 beginReveal：unref 后无其它 libuv 活动时不会被调度。
+  }
+
+  private clearToastHideTimer(): void {
+    if (this.toastHideTimer) {
+      clearTimeout(this.toastHideTimer)
+      this.toastHideTimer = undefined
+    }
+  }
+
+  /** Esc 或超时触发，把 toast 收起并让 chromeView 让位给 scene。 */
+  hideToast(): void {
+    if (!this.toastVisible) {
+      return
+    }
+    this.toastVisible = false
+    this.clearToastHideTimer()
+    if (!this.chromeVisible) {
+      this.chromeView.setVisible(false)
+    }
+  }
+
+  /** 真实面板即将打开时立即让位，不等超时——不清空 chromeView 可见性，交给随后的 showChrome 逻辑处理。 */
+  private hideToastImmediate(): void {
+    this.toastVisible = false
+    this.clearToastHideTimer()
+  }
+
+  private async captureScreenshotFromShortcut(): Promise<void> {
+    const result = await this.captureScreenshot()
+    if (this.closing || this.chromeVisible || this.chromeView.webContents.isDestroyed()) {
+      return
+    }
+    this.showToast(
+      result.ok
+        ? { kind: 'success', message: result.message }
+        : { kind: 'error', message: result.error },
+    )
   }
 
   requestControlSize(request: unknown): void {
@@ -509,8 +583,8 @@ class FoscenWindow {
 
   async captureScreenshot(): Promise<ActionResult> {
     try {
-      await this.screenshotService.capture()
-      return actionSucceeded('当前可见网页已保存为 PNG 截图')
+      const savedPath = await this.screenshotService.capture()
+      return actionSucceeded(`已保存：${basename(savedPath)}`)
     } catch (error) {
       return actionFailed(error, '截图失败')
     }
@@ -580,6 +654,7 @@ class FoscenWindow {
       this.closePersistenceStarted = true
       this.closing = true
       this.clearRevealTimer()
+      this.clearToastHideTimer()
       if (this.boundsTimer) {
         clearTimeout(this.boundsTimer)
         this.boundsTimer = undefined
@@ -606,6 +681,7 @@ class FoscenWindow {
     this.window.on('closed', () => {
       this.closing = true
       this.clearRevealTimer()
+      this.clearToastHideTimer()
       if (this.boundsTimer) {
         clearTimeout(this.boundsTimer)
       }
@@ -760,7 +836,7 @@ class FoscenWindow {
         this.showChrome('command')
       } else if (commandModifier && input.shift && key === 's') {
         event.preventDefault()
-        void this.captureScreenshot()
+        void this.captureScreenshotFromShortcut()
       } else if (commandModifier && key === 's') {
         event.preventDefault()
         this.showChrome('scenes')
@@ -785,6 +861,9 @@ class FoscenWindow {
       } else if (input.key === 'Escape' && this.chromeVisible) {
         event.preventDefault()
         this.hideChrome()
+      } else if (input.key === 'Escape' && this.toastVisible) {
+        event.preventDefault()
+        this.hideToast()
       }
     }
 

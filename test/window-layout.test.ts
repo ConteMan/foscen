@@ -45,7 +45,7 @@ test('异常小的输入会收缩边框但仍返回非空布局', () => {
 test('1280×800 下契约锁死的五个验收数字全部命中', () => {
   const cases: ReadonlyArray<{
     readonly label: string
-    readonly presentation: 'omnibar' | 'surface'
+    readonly presentation: 'omnibar' | 'surface' | 'toast'
     readonly rowCount: number
     readonly expected: { width: number; height: number; y: number }
   }> = [
@@ -78,6 +78,12 @@ test('1280×800 下契约锁死的五个验收数字全部命中', () => {
       presentation: 'surface',
       rowCount: 0,
       expected: { width: 720, height: 420, y: 80 },
+    },
+    {
+      label: 'toast',
+      presentation: 'toast',
+      rowCount: 0,
+      expected: { width: 420, height: 58, y: 112 },
     },
   ]
 

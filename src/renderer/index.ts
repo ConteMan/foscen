@@ -71,6 +71,7 @@ const ICON_PATHS: Record<string, string> = {
   frame:
     'M5 8V6a1 1 0 0 1 1-1h2M16 5h2a1 1 0 0 1 1 1v2M19 16v2a1 1 0 0 1-1 1h-2M8 19H6a1 1 0 0 1-1-1v-2',
   zap: 'M4 14 14 4l-2 8h8L10 20l2-8H4Z',
+  check: 'M20 6 9 17l-5-5',
   'alert-triangle':
     'm10.3 4.7-8.1 14a2 2 0 0 0 1.7 3h16.2a2 2 0 0 0 1.7-3l-8.1-14a2 2 0 0 0-3.4 0ZM12 9v4M12 17h.01',
 }
@@ -104,6 +105,9 @@ function maxVisibleRows(): number {
 
 const omnibarRoot = requiredElement<HTMLElement>('[data-omnibar-root]')
 const surfaceRoot = requiredElement<HTMLElement>('[data-surface-root]')
+const toastRoot = requiredElement<HTMLElement>('[data-toast-root]')
+const toastIcon = requiredElement<HTMLElement>('[data-toast-icon]')
+const toastText = requiredElement<HTMLElement>('[data-toast-text]')
 const omnibarInput = requiredElement<HTMLInputElement>('[data-omnibar-input]')
 const omnibarLabel = requiredElement<HTMLElement>('#omnibar-label')
 const field = requiredElement<HTMLElement>('[data-field]')
@@ -216,6 +220,7 @@ function showPresentation(mode: FocusMode): void {
   const omnibar = presentation === 'omnibar'
   omnibarRoot.hidden = !omnibar
   surfaceRoot.hidden = omnibar
+  toastRoot.hidden = true
   omnibarRoot.classList.toggle('is-palette', mode === 'command')
   omnibarRoot.classList.toggle('is-compact', window.innerWidth < 480)
   omnibarRoot.setAttribute('aria-label', mode === 'command' ? '命令' : '打开场景')
@@ -866,6 +871,14 @@ window.addEventListener('resize', () => {
 window.foscen.onShowChrome((state) => {
   setSurfaceStatus('')
   renderState(state)
+})
+
+window.foscen.onShowToast((toast) => {
+  omnibarRoot.hidden = true
+  surfaceRoot.hidden = true
+  toastRoot.hidden = false
+  toastIcon.replaceChildren(lucide(toast.kind === 'error' ? 'alert-triangle' : 'check'))
+  toastText.textContent = toast.message
 })
 
 void window.foscen.rendererReady()

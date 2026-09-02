@@ -68,6 +68,17 @@ export function calculateControlBounds(
   const contentWidth = Math.max(1, Math.floor(width))
   const contentHeight = Math.max(1, Math.floor(height))
 
+  if (options.presentation === 'toast') {
+    const toastWidth = Math.max(1, Math.min(420, contentWidth - 48))
+    const toastY = clampNumber(Math.round(contentHeight * 0.14), 72, 140)
+    return {
+      x: Math.round((contentWidth - toastWidth) / 2),
+      y: toastY,
+      width: toastWidth,
+      height: 58,
+    }
+  }
+
   if (options.presentation === 'surface') {
     const surfaceWidth = Math.max(1, Math.min(720, contentWidth - 48))
     const surfaceY = clampNumber(Math.round(contentHeight * 0.1), 56, 96)

@@ -6,6 +6,7 @@ import {
   type ControlSizeRequest,
   type FoscenBridge,
   type NavigateResult,
+  type ToastState,
 } from '../shared/ipc.js'
 import type {
   PermissionDecision,
@@ -61,6 +62,16 @@ const bridge: FoscenBridge = Object.freeze({
     ipcRenderer.on(IPC_CHANNELS.showChrome, handler)
     return () => {
       ipcRenderer.removeListener(IPC_CHANNELS.showChrome, handler)
+    }
+  },
+  onShowToast: (listener: (toast: ToastState) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, toast: unknown): void => {
+      listener(toast as ToastState)
+    }
+
+    ipcRenderer.on(IPC_CHANNELS.showToast, handler)
+    return () => {
+      ipcRenderer.removeListener(IPC_CHANNELS.showToast, handler)
     }
   },
 })

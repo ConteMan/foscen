@@ -51,6 +51,16 @@ scene 中的任何网页都视为不受信任：页面可能被入侵、重定�
 
 场景和权限仓库只从 Electron 的 `app.getPath('userData')` 派生固定文件，业务 API 不能传路径。数据使用版本化精确 schema、长度/数量上限、致命 UTF-8 解码、私有目录/文件权限、临时文件 `fsync` 和原子替换；损坏文件先隔离再按默认拒绝/空仓库恢复。单实例锁避免跨进程写竞争。
 
+### 外部 URL 与 Kinvo 注册
+
+`foscen://` 是来自操作系统的不受信任入站入口；它不赋予网页外部打开或 IPC 能力。监听器在 `will-finish-launching` 前安装，启动参数与第二实例共享同一校验和有界队列（最多 32 条）。只接受最长 8192 字符的原始输入；拒绝控制字符、错误百分号/UTF-8 编码、片段、未知路径、未知或重复参数。
+
+`open` 必须提供无凭据的绝对 HTTPS URL，并通过 `normalizeSceneUrl`；解码后的地址及规范化后 URL 均限制到 2048 字符。仅允许 `url`、`form`、`rule`，后两项首期忽略且只记录参数名。`scene` 和 `macro` 的 ID 只接受以字母/数字开头的字母、数字、短横线，最多 64 字符；缺失场景不导航，宏仅记录未实现。日志不回显 URL、ID 或参数值。
+
+处理外部请求不调用 `app.focus()`、窗口或 `webContents.focus()`，启动和隐藏/最小化窗口需要显示时仅使用 `showInactive()`；处理期间的权限/下载注意提示也不主动打开控制面。场景原有 HTTPS 导航、新窗口、权限和隔离策略继续生效。
+
+Kinvo 清单只在可信「权限」工作面显式点击后写入固定的 `app.getPath('home')/Library/Application Support/Kinvo/providers/foscen.json`，静态内容仅声明 `foscen.open` 和 `foscen.scene`。`kinvo:register` 和 `kinvo:unregister` 均校验当前 control sender、主 frame、精确本地文档及零参数；不接受任何外部路径或清单内容，scene 无 bridge。新目录以 `0700` 创建，已有目录权限不变，拒绝符号链接目录；临时文件排他创建且为 `0600`，写入后 `fsync`、关闭、同目录 `rename` 原子替换。失败保留旧清单并清理本次临时文件，取消注册只 unlink 自身文件，不删除目录或其它提供方。
+
 ### 升级与发布
 
 自动升级只在已打包 macOS 应用启用，源固定为 `https://update.electronjs.org/ConteMan/foscen/...`，不接受网页或本地配置覆盖。正式产物必须使用稳定 bundle id `com.conteman.foscen`、Developer ID、按进程收敛的 entitlement、Hardened Runtime、Apple 公证及最终非 draft GitHub Release；ZIP 用于升级，DMG 用于首次安装。质量门禁和凭据导入分属不同任务/阶段，证书/API key 仅存在于受保护 environment 的临时 keychain/文件并在制品验证后清理。

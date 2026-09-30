@@ -25,7 +25,9 @@ BaseWindow（单实例）
 ├── PermissionController/Store → userData/permissions.json
 ├── DownloadManager → Downloads/Foscen/.foscen-staging → 排他发布
 ├── ScreenshotService → Pictures/Foscen
-└── UpdateService → 固定 GitHub 公共更新源
+├── UpdateService → 固定 GitHub 公共更新源
+├── ExternalUrlQueue → 有界校验/排队 → HTTPS 导航或已保存场景
+└── KinvoRegistration → 用户授权后写入固定 Kinvo/providers/foscen.json
 ```
 
 window chrome、scene、control 按从下到上的顺序加入。默认边框模式下，window chrome 铺满窗口作为克制的可信背景，scene 从四边等距内缩并覆盖其中央区域；只有露出的顶部外框提供 `app-region: drag`，因此拖动入口不覆盖网页输入。macOS 交通灯在窗口首次显示前默认隐藏。极简模式下 scene 铺满窗口且 window chrome 隐藏，不存在常驻拖动命中区。control 展开时位于最上层，其顶部可拖动，按钮和输入使用 `app-region: no-drag`。
@@ -34,10 +36,10 @@ window chrome、scene、control 按从下到上的顺序加入。默认边框模
 
 ## 启动与恢复
 
-1. 模块加载最早阶段获取 Electron 单实例锁；后续实例只聚焦现有窗口。
+1. 模块加载最早阶段安装 `open-url` 监听器（早于 `will-finish-launching`），再获取 Electron 单实例锁。启动参数和 `second-instance` 中的 `foscen:` 请求走同一分发队列；无协议参数的显式启动保留聚焦行为。
 2. `app.ready` 后从固定 `userData` 读取经过严格校验的窗口、当前 URL、场景和持久权限。
 3. 创建隔离 Session 与三个 View，先安装导航、权限、下载和生命周期处理器，再加载本地窗口外框、控制面及恢复的 HTTPS 页面；设置框架交付后会在首次显示前应用持久化的边框／极简模式。
-4. 控制面完成 preload 握手后显示窗口；开发 smoke 以同一握手作为真实 Electron 启动证据。
+4. 控制面完成 preload 握手后显示窗口；外部协议启动仅 `showInactive()`，不调用任何 focus。初始化结束后按到达顺序回放最多 32 条已校验请求，后续请求仍串行执行；开发 smoke 以同一握手和真实 Electron 协议事件作为启动证据。
 5. 移动/缩放窗口采用短防抖写入；主 frame 导航提交采用最后写入优先的有界合并，窗口关闭前等待最新 URL 与窗口状态落盘。
 
 ## 可信控制流
@@ -52,6 +54,9 @@ window chrome 不配置 preload 或 IPC，只在边框模式的顶部外框提�
 控制面接收单向 `ChromeState` 快照，包含导航状态、场景、下载、权限提示/记录和升级状态。动态文本使用 DOM `textContent`，不解释网页提供的 HTML。
 
 ## 能力生命周期
+
+- 外部 URL：仅 `open`、`scene/<id>`、`macro/<id>` 进入主进程集中 dispatcher；无效请求与缺失场景只记录固定日志。外部导航隐藏控制面时不转移焦点，需要显示窗口时只调用 `showInactive()`；系统激活限制见 README 和 ADR-0005。
+- Kinvo 注册：可信控制面中的显式注册/取消动作，经两个零参数白名单 IPC 进入固定清单服务。注册按操作顺序串行执行临时文件写入、`fsync`、关闭和原子替换；取消只删除本应用清单。跨应用落盘属于授权操作，因此当前放在现有「权限」工作面并复用既有样式；统一设置框架（#10）落地后迁入设置。这是协调者批准的入口偏差，不提前扩展设置模型。
 
 - 场景：名称与 URL 经过 schema 校验，原子保存；打开场景仍走统一 HTTPS 导航策略。
 - 权限：仅当前主 frame 的精确 HTTPS origin 可进入最多 32 项的提示队列；从请求到达起 30 秒无回应即拒绝，导航、渲染进程退出和窗口关闭会取消待处理请求。

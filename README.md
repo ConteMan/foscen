@@ -64,6 +64,21 @@ pnpm run verify:package
 | 前进/后退  | `⌥ → / ⌥ ←` | `Alt → / Alt ←` |
 | 返回到网页 | `Esc`       | `Esc`           |
 
+## 外部动作与 Kinvo
+
+打包后的 Foscen 注册 `foscen://`。例如：
+
+```bash
+open 'foscen://open?url=https%3A%2F%2Fexample.com'
+open 'foscen://scene/<已保存场景ID>'
+```
+
+打开动作只接受最长 2048 字符、无凭据的 HTTPS 地址；`form`、`rule` 首期忽略。场景 ID 限字母、数字和短横线（最多 64 字符），缺失场景拒绝导航；`macro/<id>` 尚未实现。开发宿主的 macOS 协议关联应使用打包后的 `Foscen.app` 验证。
+
+按 `⌘ ,` 打开现有「权限」工作面，点击「注册到 Kinvo」，即可发布 `foscen.open`、`foscen.scene` 两个动作。清单固定写入 `~/Library/Application Support/Kinvo/providers/foscen.json`，Kinvo 发现后自动重新加载；「取消注册」仅删除本应用清单。统一设置框架（#10）落地后，该入口迁入设置。
+
+Foscen 处理外部动作时不主动索取焦点，需要显示窗口时使用 `showInactive()`。但 macOS 经默认系统入口（包括终端 `open` 或浏览器）打开协议仍可能把应用带到前台；真正不抢焦点需要调用方使用 `NSWorkspace.OpenConfiguration.activates = false`（Kinvo 侧跟进 #9），或后续本机命令接口。Foscen 不尝试把焦点退还给未知的上一应用。
+
 ## MVP 方向
 
 - 单窗口与 URL 导航；

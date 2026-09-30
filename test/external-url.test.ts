@@ -42,6 +42,30 @@ test('HTTPS 打开动作规范化并仅记录被忽略的保留参数名', async
   assert.deepEqual(context.logs, ['外部 URL：忽略保留参数 form', '外部 URL：忽略保留参数 rule'])
 })
 
+test('原始查询拒绝未编码加号，百分号编码加号保持路径不变', async () => {
+  for (const candidate of [
+    'foscen://open?url=https://example.com/+path',
+    'foscen://open?url=https%3A%2F%2Fexample.com%2F+path',
+    'foscen://open?url=https://example.com&form=a+b',
+  ]) {
+    const context = harness()
+    assert.deepEqual(await dispatchExternalUrl(candidate, context.dependencies), {
+      ok: false,
+      reason: 'invalid',
+    })
+    assert.deepEqual(context.navigations, [])
+  }
+  const context = harness()
+  assert.deepEqual(
+    await dispatchExternalUrl(
+      'foscen://open?url=https%3A%2F%2Fexample.com%2F%2Bpath',
+      context.dependencies,
+    ),
+    { ok: true },
+  )
+  assert.deepEqual(context.navigations, ['https://example.com/+path'])
+})
+
 test('URL、协议、路径、凭据、未知/重复参数、控制字符及错误编码默认拒绝', async () => {
   for (const candidate of [
     undefined,

@@ -54,6 +54,7 @@ export function parseExternalUrl(candidate: unknown): ExternalCommand {
 
   if (
     !suffix.startsWith('?') ||
+    suffix.includes('+') ||
     suffix
       .slice(1)
       .split('&')

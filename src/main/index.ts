@@ -1133,8 +1133,13 @@ if (hasSingleInstanceLock) {
       }
 
       app.on('activate', () => {
-        if (!activeWindow && !externalUrls.busy) {
-          void createWindow(false).catch(failStartup)
+        if (externalStartup || externalUrls.busy) {
+          return
+        }
+        if (activeWindow) {
+          activeWindow.focus()
+        } else {
+          void createWindow(true).catch(failStartup)
         }
       })
     })

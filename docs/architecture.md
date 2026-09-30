@@ -36,7 +36,7 @@ window chrome、scene、control 按从下到上的顺序加入。默认边框模
 
 ## 启动与恢复
 
-1. 模块加载最早阶段安装 `open-url` 监听器（早于 `will-finish-launching`），再获取 Electron 单实例锁。启动参数和 `second-instance` 中的 `foscen:` 请求走同一分发队列；无协议参数的显式启动保留聚焦行为。
+1. 模块加载最早阶段安装 `open-url` 监听器（早于 `will-finish-launching`），再获取 Electron 单实例锁。启动参数和 `second-instance` 中的 `foscen:` 请求走同一分发队列；无协议参数的显式启动保留聚焦行为。Dock `activate` 在外部队列忙碌或仍处于外部协议冷启动时不聚焦；其余情况下聚焦已有窗口，或创建并显示可接收键盘焦点的新窗口。
 2. `app.ready` 后从固定 `userData` 读取经过严格校验的窗口、当前 URL、场景和持久权限。
 3. 创建隔离 Session 与三个 View，先安装导航、权限、下载和生命周期处理器，再加载本地窗口外框、控制面及恢复的 HTTPS 页面；设置框架交付后会在首次显示前应用持久化的边框／极简模式。
 4. 控制面完成 preload 握手后显示窗口；外部协议启动仅 `showInactive()`，不调用任何 focus。初始化结束后按到达顺序回放最多 32 条已校验请求，后续请求仍串行执行；开发 smoke 以同一握手和真实 Electron 协议事件作为启动证据。

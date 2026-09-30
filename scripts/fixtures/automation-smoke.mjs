@@ -21,6 +21,11 @@ async function run() {
   const focusCalls = []
   const contents = []
   const navigations = []
+  let warmNavigationStarted = false
+  let releaseWarmNavigation
+  const warmNavigationGate = new Promise((resolve) => {
+    releaseWarmNavigation = resolve
+  })
   const handlers = new Map()
   const originalHandle = ipcMain.handle.bind(ipcMain)
   ipcMain.handle = (channel, handler) => {
@@ -42,13 +47,15 @@ async function run() {
     })
   })
   app.whenReady().then(() => {
-    session.fromPartition('persist:foscen-scenes').protocol.handle(
-      'https',
-      () =>
-        new Response('<!doctype html><title>Automation fixture</title><p>HTTPS fixture</p>', {
-          headers: { 'content-type': 'text/html' },
-        }),
-    )
+    session.fromPartition('persist:foscen-scenes').protocol.handle('https', async (request) => {
+      if (request.url === 'https://example.test/warm') {
+        warmNavigationStarted = true
+        await warmNavigationGate
+      }
+      return new Response('<!doctype html><title>Automation fixture</title><p>HTTPS fixture</p>', {
+        headers: { 'content-type': 'text/html' },
+      })
+    })
   })
 
   async function until(predicate) {
@@ -56,7 +63,7 @@ async function run() {
     while (!predicate()) {
       assert.ok(
         Date.now() < deadline,
-        `Electron automation fixture timed out: ${JSON.stringify({ argv: process.argv, navigations, documents: contents.map((target) => target.getURL()), handlers: [...handlers.keys()] })}`,
+        `Electron automation fixture timed out: ${JSON.stringify({ argv: process.argv, navigations, documents: contents.filter((target) => !target.isDestroyed()).map((target) => target.getURL()), handlers: [...handlers.keys()] })}`,
       )
       await delay(20)
     }
@@ -105,9 +112,11 @@ async function run() {
     assert.deepEqual(focusCalls, [])
 
     await emitUrl('foscen://open?url=https%3A%2F%2Fexample.test%2Fwarm&form=reserved')
-    await until(() => navigations.includes('https://example.test/warm'))
+    await until(() => warmNavigationStarted)
     app.emit('activate', {}, true)
-    assert.deepEqual(focusCalls, [])
+    assert.deepEqual(focusCalls, [], '外部 URL 处理期间 activate 不得聚焦')
+    releaseWarmNavigation()
+    await until(() => navigations.includes('https://example.test/warm'))
     const beforeRejected = [...navigations]
     for (const url of [
       'foscen://open?url=http://example.test',
@@ -153,6 +162,18 @@ async function run() {
 
     app.emit('second-instance', {}, ['Foscen'])
     assert.ok(focusCalls.includes('window.focus'))
+
+    for (const window of BaseWindow.getAllWindows()) window.close()
+    await until(() => BaseWindow.getAllWindows().length === 0)
+    assert.ok(contents.every((target) => target.isDestroyed()))
+    focusCalls.length = 0
+    app.emit('activate', {}, false)
+    await until(() => BaseWindow.getAllWindows().some((window) => window.isVisible()))
+    assert.ok(focusCalls.includes('window.show'), '无外部请求且无窗口时 Dock 必须 show')
+    assert.ok(focusCalls.includes('webContents.focus'), 'Dock 重建窗口必须获得键盘焦点')
+    focusCalls.length = 0
+    app.emit('activate', {}, true)
+    assert.deepEqual(focusCalls, ['window.show', 'window.focus'], '空闲时 Dock 聚焦已有窗口')
     console.log('FOSCEN_AUTOMATION_SMOKE_OK')
     app.quit()
   } catch (error) {

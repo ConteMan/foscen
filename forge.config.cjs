@@ -88,6 +88,7 @@ module.exports = {
     appCopyright: 'Copyright © 2026 ConteMan',
     asar: true,
     executableName: 'Foscen',
+    protocols: [{ name: 'Foscen', schemes: ['foscen'] }],
     extendInfo: {
       CFBundleDisplayName: 'Foscen',
       NSCameraUsageDescription:

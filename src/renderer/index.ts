@@ -854,6 +854,21 @@ updateInstallButton.addEventListener('click', () => {
   void runAction(() => window.foscen.installUpdate())
 })
 
+for (const [selector, action] of [
+  ['[data-kinvo-register]', () => window.foscen.registerKinvo()],
+  ['[data-kinvo-unregister]', () => window.foscen.unregisterKinvo()],
+] as const) {
+  requiredElement<HTMLButtonElement>(selector).addEventListener('click', async (event) => {
+    const button = event.currentTarget as HTMLButtonElement
+    button.disabled = true
+    try {
+      await runAction(action)
+    } finally {
+      button.disabled = false
+    }
+  })
+}
+
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     event.preventDefault()

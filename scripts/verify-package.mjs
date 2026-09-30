@@ -67,6 +67,11 @@ assert(
 )
 assert(config.packagerConfig?.asar === true, '打包必须启用 asar')
 assert(
+  JSON.stringify(config.packagerConfig?.protocols) ===
+    JSON.stringify([{ name: 'Foscen', schemes: ['foscen'] }]),
+  'Packager 必须声明 foscen URL 协议',
+)
+assert(
   config.packagerConfig?.icon?.endsWith('assets/brand/foscen.icns'),
   'Packager 必须使用品牌 icns',
 )

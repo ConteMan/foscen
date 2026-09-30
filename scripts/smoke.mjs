@@ -52,6 +52,39 @@ child.on('close', async (code, signal) => {
 
   if (code === 0 && stdout.includes(marker)) {
     console.log('Electron smoke OK')
+    const automationDirectory = await mkdtemp(join(tmpdir(), 'foscen-automation-smoke-'))
+    const automation = spawn(
+      'electron',
+      [
+        'scripts/fixtures/automation-smoke.mjs',
+        `--user-data-dir=${automationDirectory}`,
+        'foscen://open?url=https://example.test/cli',
+      ],
+      { env: { ...process.env, FOSCEN_SMOKE_TEST: '0' }, stdio: ['ignore', 'pipe', 'pipe'] },
+    )
+    let output = ''
+    automation.stdout.setEncoding('utf8')
+    automation.stderr.setEncoding('utf8')
+    automation.stdout.on('data', (chunk) => {
+      output += chunk
+    })
+    automation.stderr.on('data', (chunk) => {
+      output += chunk
+    })
+    const automationTimeout = setTimeout(() => automation.kill('SIGTERM'), timeoutMs)
+    automation.on('error', (error) => {
+      output += error.message
+    })
+    automation.on('close', async (automationCode) => {
+      clearTimeout(automationTimeout)
+      await rm(automationDirectory, { recursive: true, force: true }).catch(() => {})
+      if (automationCode === 0 && output.includes('FOSCEN_AUTOMATION_SMOKE_OK')) {
+        console.log('Electron automation smoke OK（冷启动、早到/热 URL、第二实例、非激活、IPC）')
+      } else {
+        console.error(`Electron automation smoke failed: ${output.trim() || 'no output'}`)
+        process.exitCode = 1
+      }
+    })
     return
   }
 

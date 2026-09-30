@@ -120,3 +120,10 @@ Smoke 超时仍 20s。不要把 VoiceOver、多窗口尺寸拍图放进来。
 4. renderer combobox；能锁 DOM 则 D1–D5。
 5. `selftest.sh` 全绿。
 6. 对照 H1–H8 与画稿做一次人工清单，把日期记在 PR，不写进 docs 当进度。
+
+## H. 外部 URL 与 Kinvo 自动化入口
+
+- `test/external-url.test.ts`：纯 dispatcher/队列单测，覆盖 URL、参数、长度、ID、缺失场景、未实现宏、启动缓存、第二实例非激活及开发宿主协议注册。
+- `test/kinvo-registration.test.ts`：临时 HOME 下验证固定路径、v0 静态清单、0700/0600、fsync/原子替换、失败清理、取消范围及符号链接拒绝。
+- `scripts/smoke.mjs` 调用隔离的 Electron automation fixture：使用专属 userData/HOME 和测试 HTTPS 响应，验证冷启动参数、早到/热 `open-url`、第二实例、真实 focus API 替身以及可信/非可信 IPC，不依赖公网或修改系统协议关联。
+- 真实打包应用的 LaunchServices 关联、终端 `open foscen://...` 和 Kinvo 触发属于人工集成验收；焦点观察须区分 Foscen 主动 focus 与 macOS 系统激活，后者受 ADR-0005 限制。

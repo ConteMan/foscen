@@ -21,6 +21,8 @@ export const IPC_CHANNELS = {
   revokePermission: 'permission:revoke',
   checkForUpdates: 'update:check',
   installUpdate: 'update:install',
+  registerKinvo: 'kinvo:register',
+  unregisterKinvo: 'kinvo:unregister',
 } as const
 
 export type NavigateResult = { ok: true; url: string } | { ok: false; error: string }
@@ -64,6 +66,8 @@ export interface FoscenBridge {
   revokePermission: (origin: string, permission: SupportedPermission) => Promise<ActionResult>
   checkForUpdates: () => Promise<ActionResult>
   installUpdate: () => Promise<ActionResult>
+  registerKinvo: () => Promise<ActionResult>
+  unregisterKinvo: () => Promise<ActionResult>
   onShowChrome: (listener: (state: ChromeState) => void) => () => void
   onShowToast: (listener: (toast: ToastState) => void) => () => void
 }

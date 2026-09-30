@@ -36,6 +36,8 @@ import {
 } from '../shared/ui-state.js'
 import type { UpdateSnapshot } from '../shared/updates.js'
 import { DownloadManager } from './download-manager.js'
+import { ExternalUrlQueue, registerFoscenProtocol } from './external-url.js'
+import { KinvoRegistration } from './kinvo-registration.js'
 import { PermissionController } from './permission-controller.js'
 import { createPermissionStore, type PermissionStore } from './permission-store.js'
 import { createSceneStore, type SceneStore } from './scene-store.js'
@@ -81,6 +83,23 @@ const windowChromeDocument = join(__dirname, '../window-chrome/index.html')
 const chromeDocumentUrl = pathToFileURL(chromeDocument).href
 const landingDocumentUrl = pathToFileURL(landingDocument).href
 const windowChromeDocumentUrl = pathToFileURL(windowChromeDocument).href
+let externalStartup = false
+let startupFinished = false
+
+const externalUrls = new ExternalUrlQueue({
+  getScene: (id) => createSceneStore(app).get(id),
+  navigate: async (url) => (await createWindow(false)).navigate(url, false),
+  log: (message) => console.warn(message),
+})
+const kinvoRegistration = new KinvoRegistration(app)
+
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  if (!startupFinished) {
+    externalStartup = true
+  }
+  void externalUrls.receive(url)
+})
 
 app.setName('Foscen')
 app.enableSandbox()
@@ -88,6 +107,11 @@ app.enableSandbox()
 const hasSingleInstanceLock = app.requestSingleInstanceLock()
 if (!hasSingleInstanceLock) {
   app.quit()
+} else {
+  for (const argument of process.argv.filter((value) => /^foscen:/i.test(value))) {
+    externalStartup = true
+    void externalUrls.receive(argument)
+  }
 }
 
 function denyAllSessionCapabilities(targetSession: Session): void {
@@ -320,7 +344,7 @@ class FoscenWindow {
     )
   }
 
-  async initialize(): Promise<void> {
+  async initialize(shouldActivate: () => boolean): Promise<void> {
     const restoredUrl = await this.options.sceneStore.getCurrentSceneUrl()
     await Promise.all([
       this.chromeView.webContents.loadFile(chromeDocument),
@@ -336,13 +360,16 @@ class FoscenWindow {
 
     if (process.env.FOSCEN_SMOKE_TEST === '1') {
       console.log('FOSCEN_SMOKE_READY')
-      app.quit()
       return
     }
 
     this.updateService.start()
-    this.window.show()
-    this.sceneView.webContents.focus()
+    if (shouldActivate()) {
+      this.window.show()
+      this.sceneView.webContents.focus()
+    } else {
+      this.window.showInactive()
+    }
   }
 
   ownsChromeSender(event: IpcMainInvokeEvent): boolean {
@@ -359,7 +386,7 @@ class FoscenWindow {
     this.sendState()
   }
 
-  async navigate(candidate: unknown): Promise<NavigateResult> {
+  async navigate(candidate: unknown, activate = true): Promise<NavigateResult> {
     let target: string
     try {
       target = normalizeSceneUrl(candidate)
@@ -372,7 +399,10 @@ class FoscenWindow {
 
     try {
       await this.sceneView.webContents.loadURL(target)
-      this.hideChrome()
+      this.hideChrome(activate)
+      if (!activate && (!this.window.isVisible() || this.window.isMinimized())) {
+        this.window.showInactive()
+      }
       return { ok: true, url: target }
     } catch {
       return { ok: false, error: '页面加载失败，请检查网络或地址' }
@@ -417,13 +447,15 @@ class FoscenWindow {
     this.flushChromeState()
   }
 
-  hideChrome(): void {
+  hideChrome(activate = true): void {
     this.chromeVisible = false
     this.controlRowCount = 0
     this.clearRevealTimer()
     this.clearStateSendImmediate()
     this.chromeView.setVisible(false)
-    this.sceneView.webContents.focus()
+    if (activate) {
+      this.sceneView.webContents.focus()
+    }
   }
 
   /**
@@ -885,7 +917,7 @@ class FoscenWindow {
   }
 
   private sendState(focusMode?: FocusMode): void {
-    if (focusMode) {
+    if (focusMode && !externalUrls.busy) {
       this.focusMode = focusMode
       if (!this.chromeVisible) {
         this.showChrome(focusMode)
@@ -949,6 +981,7 @@ class FoscenWindow {
 }
 
 let activeWindow: FoscenWindow | undefined
+let windowCreation: Promise<FoscenWindow> | undefined
 let isQuitting = false
 
 function isVisibleBounds(bounds: Electron.Rectangle): boolean {
@@ -1002,25 +1035,63 @@ function registerIpcHandlers(): void {
   )
   ipcMain.handle(IPC_CHANNELS.checkForUpdates, (event) => trustedWindowFor(event).checkForUpdates())
   ipcMain.handle(IPC_CHANNELS.installUpdate, (event) => trustedWindowFor(event).installUpdate())
+  ipcMain.handle(IPC_CHANNELS.registerKinvo, (event, ...args: unknown[]) =>
+    changeKinvoRegistration(event, args, true),
+  )
+  ipcMain.handle(IPC_CHANNELS.unregisterKinvo, (event, ...args: unknown[]) =>
+    changeKinvoRegistration(event, args, false),
+  )
 }
 
-async function createWindow(): Promise<void> {
+async function changeKinvoRegistration(
+  event: IpcMainInvokeEvent,
+  args: readonly unknown[],
+  register: boolean,
+): Promise<ActionResult> {
+  trustedWindowFor(event)
+  if (args.length !== 0) {
+    return actionFailed(undefined, 'Kinvo 注册不接受参数')
+  }
+  try {
+    if (register) {
+      await kinvoRegistration.register()
+    } else {
+      await kinvoRegistration.unregister()
+    }
+    return actionSucceeded(register ? '已注册到 Kinvo' : '已取消 Kinvo 注册')
+  } catch {
+    return actionFailed(undefined, '无法更新 Kinvo 注册，请检查目录权限')
+  }
+}
+
+async function createWindow(activate = true): Promise<FoscenWindow> {
+  if (windowCreation) {
+    return windowCreation
+  }
   if (activeWindow) {
-    activeWindow.focus()
-    return
+    if (activate) {
+      activeWindow.focus()
+    }
+    return activeWindow
   }
 
-  const sceneStore = createSceneStore(app)
-  const permissionStore = createPermissionStore(app)
-  const nextWindow = await FoscenWindow.create({
-    sceneStore,
-    permissionStore,
-    onClosed: () => {
-      activeWindow = undefined
-    },
-  })
-  activeWindow = nextWindow
-  await nextWindow.initialize()
+  windowCreation = (async () => {
+    const nextWindow = await FoscenWindow.create({
+      sceneStore: createSceneStore(app),
+      permissionStore: createPermissionStore(app),
+      onClosed: () => {
+        activeWindow = undefined
+      },
+    })
+    activeWindow = nextWindow
+    await nextWindow.initialize(() => activate && !externalStartup && !externalUrls.busy)
+    return nextWindow
+  })()
+  try {
+    return await windowCreation
+  } finally {
+    windowCreation = undefined
+  }
 }
 
 function failStartup(error: unknown): void {
@@ -1029,9 +1100,16 @@ function failStartup(error: unknown): void {
 }
 
 if (hasSingleInstanceLock) {
-  app.on('second-instance', () => {
-    activeWindow?.focus()
+  app.on('second-instance', (_event, argv) => {
+    if (!startupFinished && argv.some((value) => /^foscen:/i.test(value))) {
+      externalStartup = true
+    }
+    void externalUrls.secondInstance(argv, () => activeWindow?.focus())
   })
+
+  if (process.env.FOSCEN_SMOKE_TEST !== '1' && !registerFoscenProtocol(app, process)) {
+    console.warn('Foscen 协议注册未成功；开发宿主在 macOS 上需使用打包应用验证')
+  }
 
   void app
     .whenReady()
@@ -1045,9 +1123,19 @@ if (hasSingleInstanceLock) {
       installApplicationMenu()
       registerIpcHandlers()
       await createWindow()
+      await externalUrls.start()
+      startupFinished = true
+      externalStartup = false
+
+      if (process.env.FOSCEN_SMOKE_TEST === '1') {
+        app.quit()
+        return
+      }
 
       app.on('activate', () => {
-        void createWindow().catch(failStartup)
+        if (!activeWindow && !externalUrls.busy) {
+          void createWindow(false).catch(failStartup)
+        }
       })
     })
     .catch(failStartup)

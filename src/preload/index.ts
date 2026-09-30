@@ -54,6 +54,8 @@ const bridge: FoscenBridge = Object.freeze({
     invokeAction(IPC_CHANNELS.revokePermission, origin, permission),
   checkForUpdates: async () => invokeAction(IPC_CHANNELS.checkForUpdates),
   installUpdate: async () => invokeAction(IPC_CHANNELS.installUpdate),
+  registerKinvo: async () => invokeAction(IPC_CHANNELS.registerKinvo),
+  unregisterKinvo: async () => invokeAction(IPC_CHANNELS.unregisterKinvo),
   onShowChrome: (listener: (state: ChromeState) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, state: unknown): void => {
       listener(state as ChromeState)

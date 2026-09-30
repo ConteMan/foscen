@@ -151,7 +151,7 @@ test('打开面板的兜底定时器与状态推送必须保持引用，避免�
 
   assert.match(main, /private beginReveal\(/)
   assert.match(main, /this\.chromeOpenGeneration \+= 1/)
-  assert.match(main, /hideChrome\(\): void \{[\s\S]*?clearStateSendImmediate\(\)/)
+  assert.match(main, /hideChrome\([^)]*\): void \{[\s\S]*?clearStateSendImmediate\(\)/)
   assert.match(
     main,
     /requestControlSize\([\s\S]*?if \(this\.chromeVisible\) \{[\s\S]*?setVisible\(true\)/,

@@ -1,6 +1,6 @@
 # ADR-0005：自动化接口采用 URL Scheme、按需命令接口与 Kinvo 动作清单
 
-- 状态：提议（待维护者裁决）
+- 状态：已接受（维护者 2026-09-30 裁决；宏的定位延后）
 - 日期：2026-09-30
 - 关联 Issue：[#33](https://github.com/ConteMan/foscen/issues/33)
 - 关联决策：[ADR-0001](0001-electron-view-boundaries.md)、[ADR-0002](0002-trusted-capabilities.md)、[ADR-0003](0003-trusted-window-shell-and-settings.md)、[ADR-0004](0004-on-demand-omnibar.md)
@@ -259,11 +259,9 @@ Foscen 在「个人工具组合」中定位为可定制的网页桌面容器（�
 3. **首版直接引入嵌入式 WebSocket / GraphQL 服务器**：
    - _否决理由_：过度设计，急剧增加依赖体积、攻击面与进程管理复杂度，首版仅需 URL Scheme 即可满足核心打开与场景切换需求。
 
-## 待维护者裁决
+## 维护者裁决（2026-09-30）
 
-以下事项超出当前架构预设，提请维护者明确裁决：
-
-1. **跨目录落盘位置**：是否批准 Foscen 主进程在 `~/Library/Application Support/Kinvo/providers/foscen.json` 写入清单文件？若批准，应采用静默自动写入、还是需用户在设置中显式点击授权后写入？
-2. **本机接口（Loopback HTTP）的引入节奏**：是否同意本 ADR 建议的“首版仅交付 URL Scheme，本机 HTTP 接口与宏执行延后至切片 2”的分期路径？
-3. **宏（Macro）的定位与执行语义**：未来宏是以固定行为配置为主（如预置的无障碍抓取、特定网站格式化），还是允许执行受限的声明式动作流？后台执行是否允许创建后台隐藏的 `webContents` 实例？
-4. **macOS 系统级 URL 唤醒行为预期确认**：在调用方未采用 non-activating 方式调用时，macOS LaunchServices 会默认将应用前台化。是否接受该技术边界并在用户文档中予以说明？
+1. **跨目录落盘位置**：批准。采用选项 A——用户在 Foscen 设置中显式点击“注册到 Kinvo”后，才向 `~/Library/Application Support/Kinvo/providers/foscen.json` 原子写入静态清单（目录 `0700`、文件 `0600`）；不静默自动写入。
+2. **本机接口引入节奏**：同意。首版（切片 1）只交付 URL Scheme 与 Kinvo 清单；本机 HTTP 接口推迟到切片 2。
+3. **宏的定位与执行语义**：**延后**，本 ADR 不作决定。`foscen://macro/<id>` 在宏模型定义前一律返回“未实现”；是否允许后台隐藏 `webContents`、宏的形态与执行语义，待有具体需求时另立 ADR 裁决后再开发。切片 2 的本机接口不以宏为前提。
+4. **macOS 系统级激活限制**：接受。在用户文档中说明：经系统默认路径打开 `foscen://` 可能把 Foscen 带到前台；真正不抢焦点依赖调用方以不激活方式打开（Kinvo 侧见 [kinvo#9](https://github.com/ConteMan/kinvo/issues/9)）或切片 2 的本机接口。

@@ -24,7 +24,8 @@
 - 使用 Developer ID 凭据完成 Intel 与 Apple Silicon 安装验收；
 - 以两个递增签名版本验证 GitHub Release 跨版本升级；
 - 评估下载取消/恢复和更明确的截图完成反馈；
-- 根据真实使用反馈收敛场景管理与沉浸布局。
+- 根据真实使用反馈收敛场景管理与沉浸布局；
+- 评估自动化接口：URL scheme、本机命令与动作清单（参见 [ADR-0005](adr/0005-automation-interface.md)，已接受；宏延后）。
 
 ## 后续候选
 

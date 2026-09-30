@@ -61,6 +61,8 @@ scene 中的任何网页都视为不受信任：页面可能被入侵、重定�
 
 Kinvo 清单只在可信「权限」工作面显式点击后写入固定的 `app.getPath('home')/Library/Application Support/Kinvo/providers/foscen.json`，静态内容仅声明 `foscen.open` 和 `foscen.scene`。`kinvo:register` 和 `kinvo:unregister` 均校验当前 control sender、主 frame、精确本地文档及零参数；不接受任何外部路径或清单内容，scene 无 bridge。新目录以 `0700` 创建，已有目录权限不变，拒绝符号链接目录；临时文件排他创建且为 `0600`，写入后 `fsync`、关闭、同目录 `rename` 原子替换。失败保留旧清单并清理本次临时文件，取消注册只 unlink 自身文件，不删除目录或其它提供方。
 
+已知限制：逐级 `lstat` 检查与后续 `mkdir`、`open`、`rename`、`unlink` 之间并非原子操作。同用户进程可在检查后替换目录为符号链接，使后续路径操作落到替换目标；临时文件的排他创建不能阻止这种目录替换竞态。切片 1 接受此限制：竞争者已拥有同用户的目录写权限，注册内容也仅为静态动作清单。可选加固方向是逐级使用 `O_NOFOLLOW` 打开并持有目录文件描述符，再通过 `openat` / `renameat` / `unlinkat` 完成相对目录描述符的操作。
+
 ### 升级与发布
 
 自动升级只在已打包 macOS 应用启用，源固定为 `https://update.electronjs.org/ConteMan/foscen/...`，不接受网页或本地配置覆盖。正式产物必须使用稳定 bundle id `com.conteman.foscen`、Developer ID、按进程收敛的 entitlement、Hardened Runtime、Apple 公证及最终非 draft GitHub Release；ZIP 用于升级，DMG 用于首次安装。质量门禁和凭据导入分属不同任务/阶段，证书/API key 仅存在于受保护 environment 的临时 keychain/文件并在制品验证后清理。

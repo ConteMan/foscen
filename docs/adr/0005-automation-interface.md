@@ -218,7 +218,7 @@ Foscen 在「个人工具组合」中定位为可定制的网页桌面容器（�
 
 ### 代价与局限
 
-1. **系统级激活限制与跨仓库依赖**：若外部直接以系统标准方式调用 `foscen://`，macOS 会默认将应用前台化。真正的不抢焦点依赖调用方打开 URL 时显式指定不激活（`NSWorkspace.OpenConfiguration.activates = false`）。经排查 Kinvo 当前实现（`Sources/Kinvo/main.swift`）仍使用传统的 `NSWorkspace.shared.open(url)`，尚未配置该非激活参数；这构成跨仓库依赖，已列为 Kinvo 侧后续项（协调者会在 Kinvo 开 Issue 推进）。在 Kinvo 改造前，外部经系统默认路径唤起仍可能导致窗口被带至前台。
+1. **系统级激活限制与跨仓库依赖**：若外部直接以系统标准方式调用 `foscen://`，macOS 会默认将应用前台化。真正的不抢焦点依赖调用方打开 URL 时显式指定不激活（`NSWorkspace.OpenConfiguration.activates = false`）。经排查 Kinvo 当前实现（`Sources/Kinvo/main.swift`）仍使用传统的 `NSWorkspace.shared.open(url)`，尚未配置该非激活参数；这构成跨仓库依赖，已列为 Kinvo 侧后续项（[kinvo#9](https://github.com/ConteMan/kinvo/issues/9)）。在 Kinvo 改造前，外部经系统默认路径唤起仍可能导致窗口被带至前台。
 2. **存储边界扩张**：向 `~/Library/Application Support/Kinvo/providers/` 写文件打破了纯 `userData` 内部自闭环的既有边界，需要额外的权限管理与清理逻辑。
 
 ### 实现切片建议
@@ -231,7 +231,7 @@ Foscen 在「个人工具组合」中定位为可定制的网页桌面容器（�
   - 落实 non-activating 策略（主进程不主动 focus）；
   - 实现 Kinvo `foscen.json` 的安全写入或导出；
 - **跨仓库依赖**：
-  - 真正实现“不抢焦点”需要 Kinvo 打开 URL 时使用 `NSWorkspace.OpenConfiguration.activates = false`。经确认 Kinvo 当前实现尚未支持此配置，已作为 Kinvo 侧后续项跟进（协调者会在 Kinvo 开 Issue，不修改 Kinvo 代码）；Foscen 侧切片 1 先确保自身在处理协议时绝不主动索取或抢占焦点。
+  - 真正实现“不抢焦点”需要 Kinvo 打开 URL 时使用 `NSWorkspace.OpenConfiguration.activates = false`。经确认 Kinvo 当前实现尚未支持此配置，已作为 Kinvo 侧后续项跟进（[kinvo#9](https://github.com/ConteMan/kinvo/issues/9)）；Foscen 侧切片 1 先确保自身在处理协议时绝不主动索取或抢占焦点。
 - **验收要点**：
   - [ ] 终端或浏览器调用 `foscen://open?url=https://example.com` 正确在 Foscen 内加载页面；
   - [ ] 非法 URL（如 `http://`、`file://`、非法协议）被安全拦截并拒绝导航；

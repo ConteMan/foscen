@@ -77,7 +77,7 @@ open 'foscen://scene/<已保存场景ID>'
 
 按 `⌘ ,` 打开现有「权限」工作面，点击「注册到 Kinvo」，即可发布 `foscen.open`、`foscen.scene` 两个动作。清单固定写入 `~/Library/Application Support/Kinvo/providers/foscen.json`，Kinvo 发现后自动重新加载；「取消注册」仅删除本应用清单。统一设置框架（#10）落地后，该入口迁入设置。
 
-Foscen 处理外部动作时不主动索取焦点，需要显示窗口时使用 `showInactive()`。但 macOS 经默认系统入口（包括终端 `open` 或浏览器）打开协议仍可能把应用带到前台；真正不抢焦点需要调用方使用 `NSWorkspace.OpenConfiguration.activates = false`（Kinvo 侧跟进 #9），或后续本机命令接口。Foscen 不尝试把焦点退还给未知的上一应用。
+Foscen 处理外部动作时不主动索取焦点，需要显示窗口时使用 `showInactive()`。但 macOS 经默认系统入口（包括终端 `open` 或浏览器）打开协议仍可能把应用带到前台；真正不抢焦点需要调用方使用 `NSWorkspace.OpenConfiguration.activates = false`，或后续本机命令接口。Foscen 不尝试把焦点退还给未知的上一应用。
 
 ## MVP 方向
 
